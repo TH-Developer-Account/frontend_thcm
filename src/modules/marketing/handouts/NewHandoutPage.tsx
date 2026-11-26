@@ -34,8 +34,13 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { CRF_CATEGORIES, CrfCatalog, crfSearchPlaceholder } from "../crf";
+import { ApprovalTable } from "../../workflows/components/ApprovalTable";
 
-import { useHandoutQuery } from "./handouts.api";
+import { mapHandoutApprovalWorkflowToRows } from "./handoutApprovalWorkflow.mapper";
+import {
+  useHandoutApprovalWorkflowQuery,
+  useHandoutQuery,
+} from "./handouts.api";
 import { HANDOUTS_BASE_PATH } from "./handouts.constants";
 import HandoutDetailsFields from "./HandoutDetailsFields";
 import type { HandoutDetail, HandoutItem } from "./handouts.types";
@@ -115,6 +120,19 @@ function NewHandoutPageBody({
   );
 
   const { values, errors, setField, setAddressField, itemErrors } = form;
+
+  // The real approver / delivery person for the review step's Approval
+  // Workflow table. Gated on the Review step itself — most of a wizard
+  // session never gets there (someone fills in Details or Items and
+  // abandons), so there's no reason to fetch it any earlier. Once
+  // fetched it's cached, so stepping back and forward to Review again
+  // doesn't refetch.
+  const approvalWorkflowQuery = useHandoutApprovalWorkflowQuery(
+    step === STEP.REVIEW,
+  );
+  const approvalRows = mapHandoutApprovalWorkflowToRows(
+    approvalWorkflowQuery.data,
+  );
 
   // Any failed validation (Next or Submit) lands on the step that holds it.
   useEffect(() => {
@@ -205,7 +223,7 @@ function NewHandoutPageBody({
         }
       >
         {/* The Request list replaces CrfCatalog's own cart, which
-				    handouts.css hides inside .handout-catalog. */}
+		    handouts.css hides inside .handout-catalog. */}
         <div className="handout-catalog">
           <CrfCatalog
             options={[]}
@@ -299,29 +317,36 @@ function NewHandoutPageBody({
 
           <section className="min-w-0">
             <FormHeader title="Approval Workflow" Icon={Truck} />
-            {/* Handouts have a fixed two-stage flow (no workflow-engine
-						    template), so it is shown as is. */}
-            <ol className="handout-timeline px-3">
-              <li>
-                <span className="handout-timeline-dot" aria-hidden="true" />
-                <div>
-                  <strong>1. Approval</strong> by the Marketing Head
-                  <small>
-                    Single step. The request is approved, rejected, or sent back
-                    for clarification.
-                  </small>
-                </div>
-              </li>
-              <li>
-                <span className="handout-timeline-dot" aria-hidden="true" />
-                <div>
-                  <strong>2. Hand delivery</strong> by the delivery team
-                  <small>
-                    Items are verified and handed over, then the request closes.
-                  </small>
-                </div>
-              </li>
-            </ol>
+            {/* Handouts have a fixed two-stage flow with no workflow-engine
+                template behind it, so this is EPC's own ApprovalTable
+                component (modules/workflows/components/ApprovalTable.tsx)
+                fed GET /handouts/approval-workflow's real response — the
+                actual configured approver and delivery person, mapped by
+                handoutApprovalWorkflow.mapper.ts — rather than a hardcoded
+                label. The "status" column is hidden the same way EPC hides
+                it at its own review step (WorkflowViewForm.tsx's
+                HIDDEN_DRAFT_COLUMNS): nothing has happened yet, so there's
+                nothing to show there. */}
+            <div className="px-3">
+              {/* Mirrors EPC's own review-step convention in
+                  WorkflowViewForm.tsx (HIDDEN_DRAFT_COLUMNS = ["status"]):
+                  at review time nothing has happened yet, so there is no
+                  per-approver status to show. */}
+              <ApprovalTable
+                data={approvalRows}
+                hiddenColumns={["status"]}
+                emptyTitle={
+                  approvalWorkflowQuery.isLoading
+                    ? "Loading approval workflow…"
+                    : "Approval workflow unavailable"
+                }
+                emptyDescription={
+                  approvalWorkflowQuery.isLoading
+                    ? undefined
+                    : "The approver and delivery team could not be loaded right now."
+                }
+              />
+            </div>
           </section>
         </div>
       </Card>
@@ -391,10 +416,6 @@ function NewHandoutPageBody({
           ariaLabel: "New handout page location",
           breadcrumbs: [
             { label: "Home Screen", href: "/" },
-            {
-              label: "EPC Listing",
-              href: "/marketing/activity-planner/listing",
-            },
             { label: "Handouts", href: HANDOUTS_BASE_PATH },
             { label: isResubmitMode ? "Resubmit" : "New request" },
           ],

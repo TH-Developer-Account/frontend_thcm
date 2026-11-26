@@ -1,3 +1,4 @@
+// Target: layout/MainContentWrapper.tsx
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
@@ -5,6 +6,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useSidebarPermissions } from "../hooks/useSidebarPermission";
 import { adminSidebar } from "../modules/admin/admin.sidebar";
 import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
+import { handoutsSidebar } from "../modules/marketing/handouts/handouts.sidebar";
 import { DashboardLayout } from "./DashboardLayout";
 import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
@@ -70,6 +72,9 @@ export default function MainContentWrapper() {
 		}
 		if (path.startsWith("/guest")) {
 			return guestSidebar;
+		}
+		if (path.startsWith("/handouts")) {
+			return handoutsSidebar;
 		}
 		if (path.startsWith("/cpp")) return cppSidebar;
 

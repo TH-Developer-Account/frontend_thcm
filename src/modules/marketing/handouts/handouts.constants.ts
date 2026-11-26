@@ -1,3 +1,4 @@
+// Target: modules/marketing/handouts/handouts.constants.ts
 // handouts/handouts.constants.ts
 // Labels, tones and permission module keys for Handouts.
 
@@ -53,8 +54,11 @@ export const HANDOUT_FULFILLMENT_TYPE_OPTIONS = (
 ).map((value) => ({ value, label: HANDOUT_FULFILLMENT_TYPE_LABEL[value] }));
 
 /**
- * RBAC (app "MAP"). ASSUMPTION — create this one module in the profile
- * editor and grant it per profile; no designation list or named
+ * RBAC. Handouts is its own top-level app now ("HANDOUT"), not a module
+ * bolted onto "MAP" — create this app + its one module in the profile
+ * editor (the one-off migration script creates the App/WorkspaceApp/Module
+ * rows; profiles granting it are created through the normal Admin > User
+ * Profiles flow, same as any other app). No designation list or named
  * "Marketing Head" role is hard-coded on the frontend:
  *
  *   HANDOUT  read = open Handouts / see own
@@ -66,7 +70,7 @@ export const HANDOUT_FULFILLMENT_TYPE_OPTIONS = (
  * come from the server's per-request `permissions` flags, which narrow a
  * write grant further by the request's status.
  */
-export const HANDOUT_APP = "MAP";
+export const HANDOUT_APP = "HANDOUT";
 export const HANDOUT_MODULE = "HANDOUT";
 
 export const HANDOUT_LIMITS = {
@@ -77,5 +81,5 @@ export const HANDOUT_LIMITS = {
   MAX_ITEMS: 50,
 } as const;
 
-export const HANDOUTS_BASE_PATH = "/marketing/activity-planner/handouts";
+export const HANDOUTS_BASE_PATH = "/handouts";
 export const HANDOUTS_NEW_PATH = `${HANDOUTS_BASE_PATH}/new`;

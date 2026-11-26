@@ -48,7 +48,9 @@ import {
   showSuccessToast,
 } from "../../../utils/apiError.helper";
 import "../activity-planner/utils/activity-planner.styles.css";
+import { ApprovalTable } from "../../workflows/components/ApprovalTable";
 
+import { mapHandoutApprovalWorkflowToRows } from "./handoutApprovalWorkflow.mapper";
 import {
   HANDOUT_AUDIT_MESSAGES,
   HANDOUT_AUDIT_SUBJECT,
@@ -56,6 +58,7 @@ import {
   handoutKeys,
   useApproveHandoutMutation,
   useCancelHandoutMutation,
+  useHandoutApprovalWorkflowQuery,
   useHandoutQuery,
   useHandoutStockQuery,
   useCannotFulfilHandoutMutation,
@@ -101,6 +104,13 @@ export default function HandoutDetailPage() {
   const needsStock =
     handout?.status === "PENDING_APPROVAL" || handout?.status === "APPROVED";
   const stockQuery = useHandoutStockQuery(handout?.items ?? [], needsStock);
+
+  // The real approver / delivery person for the Approval Workflow table on
+  // the Info tab — same endpoint and mapper NewHandoutPage's review step
+  // uses, just with this request's own status passed through so each
+  // stage's real APPROVED/REJECTED/IN_PROGRESS/CLARIFIED status shows,
+  // instead of staying blank like an unsubmitted draft's would.
+  const approvalWorkflowQuery = useHandoutApprovalWorkflowQuery();
 
   const approve = useApproveHandoutMutation();
   const reject = useRejectHandoutMutation();
@@ -154,6 +164,10 @@ export default function HandoutDetailPage() {
   const stock = stockQuery.data;
   const shortLines = (stock?.lines ?? []).filter(
     (line) => line.status !== "AVAILABLE",
+  );
+  const approvalRows = mapHandoutApprovalWorkflowToRows(
+    approvalWorkflowQuery.data,
+    { handoutStatus: handout.status },
   );
 
   /* ------------------------------ Actions ------------------------------- */
@@ -278,19 +292,45 @@ export default function HandoutDetailPage() {
     switch (currentTab) {
       case "info":
         return (
-          <Card key="info" title={TAB_TITLES.info}>
-            {/* The same form as the New request page, in view mode. */}
-            <HandoutDetailsFields
-              mode="view"
-              values={detailsFromHandout(handout)}
-              meta={{
-                requestedBy: handout.requestedByName,
-                designation: handout.requestedByDesignation,
-                department: handout.requestedByDepartment,
-                requestedOn: handout.createdAt,
-              }}
-            />
-          </Card>
+          <div key="info" className="handout-stack">
+            <Card title={TAB_TITLES.info}>
+              {/* The same form as the New request page, in view mode. */}
+              <HandoutDetailsFields
+                mode="view"
+                values={detailsFromHandout(handout)}
+                meta={{
+                  requestedBy: handout.requestedByName,
+                  designation: handout.requestedByDesignation,
+                  department: handout.requestedByDepartment,
+                  requestedOn: handout.createdAt,
+                }}
+              />
+            </Card>
+
+            {/* Same ApprovalTable component EPC's review step uses, fed
+                GET /handouts/approval-workflow's real approver/delivery
+                person. Unlike NewHandoutPage's review step, the "status"
+                column is NOT hidden here — this is a real request with a
+                real status, so each stage's actual
+                APPROVED/REJECTED/IN_PROGRESS/CLARIFIED state is shown,
+                the same way EPC's own detail view shows real stage
+                status rather than a draft preview's blank one. */}
+            <Card title="Approval Workflow">
+              <ApprovalTable
+                data={approvalRows}
+                emptyTitle={
+                  approvalWorkflowQuery.isLoading
+                    ? "Loading approval workflow…"
+                    : "Approval workflow unavailable"
+                }
+                emptyDescription={
+                  approvalWorkflowQuery.isLoading
+                    ? undefined
+                    : "The approver and delivery team could not be loaded right now."
+                }
+              />
+            </Card>
+          </div>
         );
 
       case "items":

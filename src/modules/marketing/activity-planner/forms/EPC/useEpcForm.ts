@@ -11,13 +11,13 @@ import { mapEpcDetailToFormValues } from "./epc.mapper";
 import { buildEpcNoFromValues } from "./epcNumber";
 
 import type {
-	EpcCreatePayload,
-	EpcDetailResponse,
-	EpcFormValues,
+  EpcCreatePayload,
+  EpcDetailResponse,
+  EpcFormValues,
 } from "../../types/epc.types";
 import {
-	useCreateEpcMutation,
-	useUpdateEpcMutation,
+  useCreateEpcMutation,
+  useUpdateEpcMutation,
 } from "../../queries/epc.queries";
 import { useAuth } from "../../../../../context/Auth/useAuth"; // adjust if useAuth lives elsewhere
 import { findOption, getOptionCode } from "./epc.utils";
@@ -28,23 +28,27 @@ export type EpcSaveStatus = "DRAFT" | "SUBMITTED";
 
 /** Fields that were filled from the logged-in user's profile (shown read-only). */
 export type ProfileLocked = Partial<
-	Record<"region" | "branch" | "department", boolean>
+  Record<"region" | "branch" | "department", boolean>
 >;
 
 type MasterOption = {
-	value: string;
-	label: string;
-	code?: string;
-	[key: string]: unknown;
+  value: string;
+  label: string;
+  code?: string;
+  [key: string]: unknown;
 };
 
 type EpcMasters = {
-	regions?: MasterOption[];
-	branches?: MasterOption[];
-	departments?: MasterOption[];
-	vertical?: MasterOption[];
-	eventNames?: MasterOption[];
-	budgetMasters?: MasterOption[];
+  regions?: MasterOption[];
+  branches?: MasterOption[];
+  // Division replaced Department as EPC's org-unit master. The form field
+  // itself is still named/keyed "department" (see EpcFormFields.tsx and
+  // EpcFormValues["department"]) — only the master list backing it moved
+  // from the removed `departments` key to `divisions`.
+  divisions?: MasterOption[];
+  vertical?: MasterOption[];
+  eventNames?: MasterOption[];
+  budgetMasters?: MasterOption[];
 };
 
 /**
@@ -53,358 +57,358 @@ type EpcMasters = {
  * code-based map in epc.zonemap.ts. Null when the branch isn't mapped.
  */
 const resolveBranchRegionId = (
-	branch: MasterOption,
-	regions: MasterOption[] = [],
+  branch: MasterOption,
+  regions: MasterOption[] = [],
 ): string | null => {
-	const direct =
-		branch.regionId ??
-		branch.region_id ??
-		branch.zoneId ??
-		branch.zone_id ??
-		(typeof branch.region === "string" ? branch.region : undefined);
+  const direct =
+    branch.regionId ??
+    branch.region_id ??
+    branch.zoneId ??
+    branch.zone_id ??
+    (typeof branch.region === "string" ? branch.region : undefined);
 
-	if (direct) return findOption(regions, String(direct))?.value ?? null;
+  if (direct) return findOption(regions, String(direct))?.value ?? null;
 
-	const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
-	if (!zoneCode) return null;
+  const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
+  if (!zoneCode) return null;
 
-	return regions.find((r) => getOptionCode(r) === zoneCode)?.value ?? null;
+  return regions.find((r) => getOptionCode(r) === zoneCode)?.value ?? null;
 };
 
 export type UseEpcFormProps = {
-	mode?: EpcFormMode;
-	epcId?: string | null;
-	initialData?: EpcDetailResponse | null;
-	masters?: EpcMasters;
-	onSuccess?: (data?: any) => Promise<void> | void;
+  mode?: EpcFormMode;
+  epcId?: string | null;
+  initialData?: EpcDetailResponse | null;
+  masters?: EpcMasters;
+  onSuccess?: (data?: any) => Promise<void> | void;
 };
 
 type UseEpcFormResult = {
-	values: EpcFormValues;
-	errors: EpcFormErrors;
-	loading: boolean;
-	isEditMode: boolean;
-	profileLocked: ProfileLocked;
-	handleChange: (name: keyof EpcFormValues, value: string) => void;
-	handleSave: (status: EpcSaveStatus) => Promise<void>;
-	handleReset: () => void;
+  values: EpcFormValues;
+  errors: EpcFormErrors;
+  loading: boolean;
+  isEditMode: boolean;
+  profileLocked: ProfileLocked;
+  handleChange: (name: keyof EpcFormValues, value: string) => void;
+  handleSave: (status: EpcSaveStatus) => Promise<void>;
+  handleReset: () => void;
 };
 
 export const initialEpcValues: EpcFormValues = {
-	epfNo: "",
-	poDocumentRefNo: "",
+  epfNo: "",
+  poDocumentRefNo: "",
 
-	department: "",
-	region: "",
-	branch: "",
-	budget_master_id: "",
-	budgetDescription: "",
-	vertical: "",
+  department: "",
+  region: "",
+  branch: "",
+  budget_master_id: "",
+  budgetDescription: "",
+  vertical: "",
 
-	event_scale: 0,
-	event_name: "",
-	event_description: "",
-	event_from_date: "",
-	event_to_date: "",
-	location: "",
-	locationMeta: {
-		pincode: "",
-		officeName: "",
-		district: "",
-		stateName: "",
-		latitude: null,
-		longitude: null,
-	},
-	event_objective: "",
+  event_scale: 0,
+  event_name: "",
+  event_description: "",
+  event_from_date: "",
+  event_to_date: "",
+  location: "",
+  locationMeta: {
+    pincode: "",
+    officeName: "",
+    district: "",
+    stateName: "",
+    latitude: null,
+    longitude: null,
+  },
+  event_objective: "",
 
-	status: "DRAFT",
-	proposal_number: "",
+  status: "DRAFT",
+  proposal_number: "",
 };
 
 const toEpcFormValues = (data?: EpcDetailResponse | null): EpcFormValues => ({
-	...initialEpcValues,
-	...mapEpcDetailToFormValues(data),
+  ...initialEpcValues,
+  ...mapEpcDetailToFormValues(data),
 });
 
 const shouldRegenerateEpcNo = (
-	mode: EpcFormMode,
-	name: keyof EpcFormValues,
+  mode: EpcFormMode,
+  name: keyof EpcFormValues,
 ) => {
-	if (mode === "edit") return false;
+  if (mode === "edit") return false;
 
-	return (
-		name === "department" ||
-		name === "region" ||
-		name === "branch" ||
-		name === "vertical"
-	);
+  return (
+    name === "department" ||
+    name === "region" ||
+    name === "branch" ||
+    name === "vertical"
+  );
 };
 const LOCKED_EDIT_FIELDS: readonly (keyof EpcFormValues)[] = [
-	"department",
-	"region",
-	"branch",
-	"vertical",
+  "department",
+  "region",
+  "branch",
+  "vertical",
 ];
 export function useEpcForm({
-	mode = "create",
-	epcId: propEpcId,
-	initialData,
-	masters,
-	onSuccess,
+  mode = "create",
+  epcId: propEpcId,
+  initialData,
+  masters,
+  onSuccess,
 }: UseEpcFormProps = {}): UseEpcFormResult {
-	const navigate = useNavigate();
-	const { showToast } = useToast();
-	const { user } = useAuth();
-	const prefilledRef = React.useRef(false);
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { user } = useAuth();
+  const prefilledRef = React.useRef(false);
 
-	const createEpcMutation = useCreateEpcMutation();
-	const updateEpcMutation = useUpdateEpcMutation();
+  const createEpcMutation = useCreateEpcMutation();
+  const updateEpcMutation = useUpdateEpcMutation();
 
-	const storedInfo = React.useMemo(() => getStoredEpcInfo(), []);
+  const storedInfo = React.useMemo(() => getStoredEpcInfo(), []);
 
-	const epcId =
-		mode === "edit"
-			? (propEpcId ?? storedInfo?.epcId ?? null)
-			: (propEpcId ?? null);
+  const epcId =
+    mode === "edit"
+      ? (propEpcId ?? storedInfo?.epcId ?? null)
+      : (propEpcId ?? null);
 
-	const isEditMode = mode === "edit" || Boolean(epcId);
+  const isEditMode = mode === "edit" || Boolean(epcId);
 
-	const initialValues = React.useMemo(() => {
-		if (initialData) {
-			return toEpcFormValues(initialData);
-		}
+  const initialValues = React.useMemo(() => {
+    if (initialData) {
+      return toEpcFormValues(initialData);
+    }
 
-		return initialEpcValues;
-	}, [initialData]);
+    return initialEpcValues;
+  }, [initialData]);
 
-	const [values, setValues] = React.useState<EpcFormValues>(initialValues);
-	const [errors, setErrors] = React.useState<EpcFormErrors>({});
+  const [values, setValues] = React.useState<EpcFormValues>(initialValues);
+  const [errors, setErrors] = React.useState<EpcFormErrors>({});
 
-	const loading = createEpcMutation.isPending || updateEpcMutation.isPending;
+  const loading = createEpcMutation.isPending || updateEpcMutation.isPending;
 
-	const [profileLocked, setProfileLocked] = React.useState<ProfileLocked>({});
+  const [profileLocked, setProfileLocked] = React.useState<ProfileLocked>({});
 
-	// Create mode only: fill Department, Zone and Branch from the logged-in
-	// user, once. A field that was filled this way is locked (read-only); a
-	// field the profile couldn't supply stays editable.
-	React.useEffect(() => {
-		if (mode !== "create" || isEditMode || prefilledRef.current) return;
+  // Create mode only: fill Department, Zone and Branch from the logged-in
+  // user, once. A field that was filled this way is locked (read-only); a
+  // field the profile couldn't supply stays editable.
+  React.useEffect(() => {
+    if (mode !== "create" || isEditMode || prefilledRef.current) return;
 
-		// "Loaded" means non-empty, not merely defined: while the masters query
-		// is in flight the lists can be [] (truthy), and the profile can be a
-		// partial object. Marking the prefill as done on that first pass is why
-		// the fields stayed empty until a refresh.
-		const regions = masters?.regions;
-		const branches = masters?.branches;
-		const departments = masters?.departments;
+    // "Loaded" means non-empty, not merely defined: while the masters query
+    // is in flight the lists can be [] (truthy), and the profile can be a
+    // partial object. Marking the prefill as done on that first pass is why
+    // the fields stayed empty until a refresh.
+    const regions = masters?.regions;
+    const branches = masters?.branches;
+    const divisions = masters?.divisions;
 
-		const mastersReady = Boolean(
-			regions?.length && branches?.length && departments?.length,
-		);
-		const profileReady = Boolean(
-			user && (user.department || user.branch || user.zone),
-		);
+    const mastersReady = Boolean(
+      regions?.length && branches?.length && divisions?.length,
+    );
+    const profileReady = Boolean(
+      user && (user.department || user.branch || user.zone),
+    );
 
-		if (!mastersReady || !profileReady || !regions || !branches || !departments)
-			return;
+    if (!mastersReady || !profileReady || !regions || !branches || !divisions)
+      return;
 
-		prefilledRef.current = true; // real data is in: run once, even if nothing matches
+    prefilledRef.current = true; // real data is in: run once, even if nothing matches
 
-		const department = findOption(departments, user!.department);
-		const branch = findOption(branches, user!.branch);
-		const userZone = findOption(regions, user!.zone);
+    const department = findOption(divisions, user!.department);
+    const branch = findOption(branches, user!.branch);
+    const userZone = findOption(regions, user!.zone);
 
-		// A branch decides its zone (the form keeps the two consistent);
-		// otherwise fall back to the user's own zone.
-		const branchZoneId = branch ? resolveBranchRegionId(branch, regions) : null;
-		const zoneId = branchZoneId ?? userZone?.value ?? "";
+    // A branch decides its zone (the form keeps the two consistent);
+    // otherwise fall back to the user's own zone.
+    const branchZoneId = branch ? resolveBranchRegionId(branch, regions) : null;
+    const zoneId = branchZoneId ?? userZone?.value ?? "";
 
-		setProfileLocked({
-			department: Boolean(department),
-			region: Boolean(zoneId),
-			branch: Boolean(branch),
-		});
+    setProfileLocked({
+      department: Boolean(department),
+      region: Boolean(zoneId),
+      branch: Boolean(branch),
+    });
 
-		if (!department && !branch && !zoneId) return;
+    if (!department && !branch && !zoneId) return;
 
-		setValues((prev) => {
-			const next: EpcFormValues = { ...prev };
-			if (!prev.department && department) next.department = department.value;
-			if (!prev.region && zoneId) next.region = zoneId;
-			if (!prev.branch && branch) next.branch = branch.value;
+    setValues((prev) => {
+      const next: EpcFormValues = { ...prev };
+      if (!prev.department && department) next.department = department.value;
+      if (!prev.region && zoneId) next.region = zoneId;
+      if (!prev.branch && branch) next.branch = branch.value;
 
-			if (
-				next.department !== prev.department ||
-				next.region !== prev.region ||
-				next.branch !== prev.branch
-			) {
-				const epcNo = buildEpcNoFromValues(next, masters);
-				next.epfNo = epcNo;
-				next.proposal_number = epcNo;
-			}
-			return next;
-		});
-	}, [mode, isEditMode, user, masters]);
+      if (
+        next.department !== prev.department ||
+        next.region !== prev.region ||
+        next.branch !== prev.branch
+      ) {
+        const epcNo = buildEpcNoFromValues(next, masters);
+        next.epfNo = epcNo;
+        next.proposal_number = epcNo;
+      }
+      return next;
+    });
+  }, [mode, isEditMode, user, masters]);
 
-	const handleChange = React.useCallback(
-		(name: keyof EpcFormValues, value: string) => {
-			if (isEditMode && LOCKED_EDIT_FIELDS.includes(name)) {
-				return;
-			}
+  const handleChange = React.useCallback(
+    (name: keyof EpcFormValues, value: string) => {
+      if (isEditMode && LOCKED_EDIT_FIELDS.includes(name)) {
+        return;
+      }
 
-			setValues((prev) => {
-				const nextValues: EpcFormValues = {
-					...prev,
-					[name]: value,
-				};
+      setValues((prev) => {
+        const nextValues: EpcFormValues = {
+          ...prev,
+          [name]: value,
+        };
 
-				if (shouldRegenerateEpcNo(mode, name)) {
-					const generatedEpcNo = buildEpcNoFromValues(nextValues, masters);
+        if (shouldRegenerateEpcNo(mode, name)) {
+          const generatedEpcNo = buildEpcNoFromValues(nextValues, masters);
 
-					nextValues.epfNo = generatedEpcNo;
-					nextValues.proposal_number = generatedEpcNo;
-				}
+          nextValues.epfNo = generatedEpcNo;
+          nextValues.proposal_number = generatedEpcNo;
+        }
 
-				return nextValues;
-			});
+        return nextValues;
+      });
 
-			setErrors((prev) => {
-				if (!prev[name]) return prev;
+      setErrors((prev) => {
+        if (!prev[name]) return prev;
 
-				return {
-					...prev,
-					[name]: undefined,
-				};
-			});
-		},
-		[isEditMode, mode, masters],
-	);
+        return {
+          ...prev,
+          [name]: undefined,
+        };
+      });
+    },
+    [isEditMode, mode, masters],
+  );
 
-	const handleReset = React.useCallback(() => {
-		setValues(initialValues);
-		setErrors({});
-	}, [initialValues]);
+  const handleReset = React.useCallback(() => {
+    setValues(initialValues);
+    setErrors({});
+  }, [initialValues]);
 
-	const handleSave = React.useCallback(
-		async (status: EpcSaveStatus) => {
-			try {
-				const generatedEpcNo =
-					values.proposal_number ||
-					values.epfNo ||
-					buildEpcNoFromValues(values, masters);
+  const handleSave = React.useCallback(
+    async (status: EpcSaveStatus) => {
+      try {
+        const generatedEpcNo =
+          values.proposal_number ||
+          values.epfNo ||
+          buildEpcNoFromValues(values, masters);
 
-				const nextValues: EpcFormValues = {
-					...values,
-					status,
-					proposal_number: generatedEpcNo,
-					epfNo: generatedEpcNo,
-				};
+        const nextValues: EpcFormValues = {
+          ...values,
+          status,
+          proposal_number: generatedEpcNo,
+          epfNo: generatedEpcNo,
+        };
 
-				const validationErrors = validateEpcForm(nextValues);
+        const validationErrors = validateEpcForm(nextValues);
 
-				if (Object.keys(validationErrors).length > 0) {
-					setErrors(validationErrors);
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors(validationErrors);
 
-					showToast({
-						type: "error",
-						title: "Validation Error",
-						description: "Please fill all required EPC fields.",
-					});
+          showToast({
+            type: "error",
+            title: "Validation Error",
+            description: "Please fill all required EPC fields.",
+          });
 
-					return;
-				}
+          return;
+        }
 
-				if (!nextValues.proposal_number) {
-					showToast({
-						type: "error",
-						title: "EPC No missing",
-						description:
-							"Please select Department, Zone, Branch, and Vertical to generate EPC No.",
-					});
+        if (!nextValues.proposal_number) {
+          showToast({
+            type: "error",
+            title: "EPC No missing",
+            description:
+              "Please select Department, Zone, Branch, and Vertical to generate EPC No.",
+          });
 
-					return;
-				}
+          return;
+        }
 
-				let savedData: any;
+        let savedData: any;
 
-				if (isEditMode && epcId) {
-					const payload = buildEpcUpdatePayload(nextValues);
+        if (isEditMode && epcId) {
+          const payload = buildEpcUpdatePayload(nextValues);
 
-					savedData = await updateEpcMutation.mutateAsync({
-						epcId,
-						payload,
-					});
+          savedData = await updateEpcMutation.mutateAsync({
+            epcId,
+            payload,
+          });
 
-					showToast({
-						type: "success",
-						title: "Success",
-						description: "EPC updated successfully.",
-					});
-				} else {
-					const payload: EpcCreatePayload = buildEpcCreatePayload(nextValues);
+          showToast({
+            type: "success",
+            title: "Success",
+            description: "EPC updated successfully.",
+          });
+        } else {
+          const payload: EpcCreatePayload = buildEpcCreatePayload(nextValues);
 
-					savedData = await createEpcMutation.mutateAsync(payload);
+          savedData = await createEpcMutation.mutateAsync(payload);
 
-					clearStoredEpcInfo();
+          clearStoredEpcInfo();
 
-					showToast({
-						type: "success",
-						title: "Success",
-						description: "EPC created successfully.",
-					});
-				}
+          showToast({
+            type: "success",
+            title: "Success",
+            description: "EPC created successfully.",
+          });
+        }
 
-				if (onSuccess) {
-					await onSuccess(savedData);
-					return;
-				}
+        if (onSuccess) {
+          await onSuccess(savedData);
+          return;
+        }
 
-				const savedEpcId =
-					savedData?.id ??
-					savedData?.eventProposal?.id ??
-					savedData?.epcId ??
-					savedData?.epc?.id ??
-					epcId;
+        const savedEpcId =
+          savedData?.id ??
+          savedData?.eventProposal?.id ??
+          savedData?.epcId ??
+          savedData?.epc?.id ??
+          epcId;
 
-				if (savedEpcId) {
-					navigate(`/marketing/activity-planner/${savedEpcId}`);
-				} else {
-					navigate("/marketing/activity-planner/listing");
-				}
-			} catch (error: any) {
-				console.error("EPC save failed:", error);
+        if (savedEpcId) {
+          navigate(`/marketing/activity-planner/${savedEpcId}`);
+        } else {
+          navigate("/marketing/activity-planner/listing");
+        }
+      } catch (error: any) {
+        console.error("EPC save failed:", error);
 
-				showToast({
-					type: "error",
-					title: "Error",
-					description:
-						error?.response?.data?.message ||
-						error?.message ||
-						"Failed to save EPC.",
-				});
-			}
-		},
-		[
-			values,
-			masters,
-			isEditMode,
-			epcId,
-			updateEpcMutation,
-			createEpcMutation,
-			showToast,
-			onSuccess,
-			navigate,
-		],
-	);
+        showToast({
+          type: "error",
+          title: "Error",
+          description:
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to save EPC.",
+        });
+      }
+    },
+    [
+      values,
+      masters,
+      isEditMode,
+      epcId,
+      updateEpcMutation,
+      createEpcMutation,
+      showToast,
+      onSuccess,
+      navigate,
+    ],
+  );
 
-	return {
-		values,
-		errors,
-		loading,
-		isEditMode,
-		profileLocked,
-		handleChange,
-		handleSave,
-		handleReset,
-	};
+  return {
+    values,
+    errors,
+    loading,
+    isEditMode,
+    profileLocked,
+    handleChange,
+    handleSave,
+    handleReset,
+  };
 }

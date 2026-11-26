@@ -16,8 +16,9 @@ import {
 	MASTER_DEFS,
 	buildPayloadData,
 	getMasterDef,
+	type Feed,
 } from "./masters.config";
-import type { FeedOption, MasterFormValues, MasterKey, MasterRow } from "./masters.types";
+import type { MasterFormValues, MasterKey, MasterRow } from "./masters.types";
 
 import "./masters-hub.css";
 
@@ -26,13 +27,16 @@ const PAGE_SIZE = 25;
 /** Which pane is visible on phones. On desktop all panes show at once. */
 type Pane = "hub" | "list" | "form";
 
-type Feed = Record<string, FeedOption[] | undefined>;
-
 const errorMessage = (error: unknown): string => {
-	const data = (error as { response?: { data?: { error?: string; message?: string } } })
-		?.response?.data;
+	const data = (
+		error as { response?: { data?: { error?: string; message?: string } } }
+	)?.response?.data;
 
-	return data?.error || data?.message || (error instanceof Error ? error.message : "Request failed");
+	return (
+		data?.error ||
+		data?.message ||
+		(error instanceof Error ? error.message : "Request failed")
+	);
 };
 
 const useDebounced = <T,>(value: T, delay: number): T => {
@@ -68,14 +72,16 @@ const MastersPage = () => {
 	const master = useMasterData();
 	const saveMaster = useSaveMaster();
 
-	const feed = master.data as unknown as Feed | undefined;
+	const feed = (master.data as unknown as Feed | undefined) ?? {};
 
 	// Every master's rows, built once per refetch.
 	const rowsByMaster = useMemo(() => {
 		const result = {} as Record<MasterKey, MasterRow[]>;
 
 		for (const item of MASTER_DEFS) {
-			result[item.key] = (feed?.[item.feedKey] ?? []).map(item.toRow);
+			result[item.key] = (feed[item.feedKey] ?? []).map((option) =>
+				item.toRow(option, feed),
+			);
 		}
 
 		return result;
@@ -83,12 +89,15 @@ const MastersPage = () => {
 
 	const counts = useMemo(
 		() =>
-			feed
+			master.data
 				? (Object.fromEntries(
-						MASTER_DEFS.map((item) => [item.key, rowsByMaster[item.key].length]),
+						MASTER_DEFS.map((item) => [
+							item.key,
+							rowsByMaster[item.key].length,
+						]),
 					) as Record<MasterKey, number>)
 				: {},
-		[feed, rowsByMaster],
+		[master.data, rowsByMaster],
 	);
 
 	const filtered = useMemo(() => {
@@ -96,7 +105,9 @@ const MastersPage = () => {
 		if (!search) return rows;
 
 		return rows.filter((row) =>
-			[row.name, row.code, row.id_desc].some((part) => part?.toLowerCase().includes(search)),
+			[row.name, row.code, row.id_desc, row.division_name].some((part) =>
+				part?.toLowerCase().includes(search),
+			),
 		);
 	}, [rowsByMaster, activeKey, search]);
 
@@ -192,7 +203,9 @@ const MastersPage = () => {
 			/>
 			<div className="mh" data-pane={pane}>
 				<header className="mh-header">
-					<p className="mh-subtitle">Reference data used across the dropdowns of every app.</p>
+					<p className="mh-subtitle">
+						Reference data used across the dropdowns of every app.
+					</p>
 				</header>
 
 				<MasterHub
@@ -227,6 +240,7 @@ const MastersPage = () => {
 								isSaving={saveMaster.isPending}
 								onSave={handleSave}
 								onClose={closeForm}
+								feed={feed}
 							/>
 						) : (
 							<div className="mh-empty mh-empty--detail">

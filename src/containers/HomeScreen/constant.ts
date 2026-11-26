@@ -1,3 +1,4 @@
+// Target: containers/HomeScreen/constant.ts
 import type { LucideIcon } from "lucide-react";
 import {
 	BriefcaseMedical,
@@ -5,6 +6,8 @@ import {
 	ClipboardPlus,
 	Coins,
 	FileText,
+	Gift,
+	GiftIcon,
 	Handshake,
 	Megaphone,
 	MonitorCog,
@@ -58,6 +61,15 @@ export const actions: HomeAction[] = [
 		access: { kind: "app", appKey: "MAP" },
 		isActive: false,
 		badge: { label: "Frequently used", icon: Star },
+	},
+	{
+		icon: Gift,
+		decorIcon: GiftIcon,
+		title: "Handouts",
+		description: "Request, approve, and track souvenir handouts.",
+		path: "/handouts",
+		access: { kind: "app", appKey: "HANDOUT" },
+		isActive: false,
 	},
 	{
 		icon: FileText,

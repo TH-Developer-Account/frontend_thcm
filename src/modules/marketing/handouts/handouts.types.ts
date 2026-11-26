@@ -133,6 +133,30 @@ export type HandoutDetail = HandoutSummary & {
 };
 
 /* ========================================================================== */
+/*                         Approval workflow (display)                        */
+/* ========================================================================== */
+
+/**
+ * GET /handouts/approval-workflow — Handouts' two fixed roles
+ * (HANDOUT_APPROVER_USER_ID / HANDOUT_DELIVERY_USER_ID), resolved to real
+ * users for display. Not a WorkflowTemplate stage — Handouts has no
+ * workflow-engine template behind it — but shaped close enough to one
+ * (stageOrder/stageName + the one real person on it) that it can be fed
+ * through the same ApprovalTable component EPC uses.
+ */
+export type HandoutApprovalWorkflowStage = {
+  stageOrder: number;
+  stageName: string;
+  name: string;
+  email: string;
+  designation: string | null;
+};
+
+export type HandoutApprovalWorkflow = {
+  stages: HandoutApprovalWorkflowStage[];
+};
+
+/* ========================================================================== */
 /*                                 Write model                                */
 /* ========================================================================== */
 

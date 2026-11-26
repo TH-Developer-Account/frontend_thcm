@@ -1,3 +1,4 @@
+// Target: routes/AppRoutes.tsx
 // AppRoutes.tsx
 import { Suspense, lazy } from "react";
 import { Route, Routes } from "react-router-dom";
@@ -8,6 +9,7 @@ import HomeLayout from "../layout/HomeLayout";
 import MainContentWrapper from "../layout/MainContentWrapper";
 
 import AdminRoutes from "./adminRoutes";
+import HandoutsRoutes from "./handoutsRoutes";
 import MarketingRoutes from "./marketingRoutes";
 import MedicalRoutes from "./medicalRoutes";
 import ProtectedRoute from "./ProtectedRoute";
@@ -75,7 +77,7 @@ const AuthenticatedRoutes = () => {
 					<Route path="/workflow/*" element={<WorkflowRoutes />} />
 					<Route path="/medi-claim/*" element={<MedicalRoutes />} />
 					<Route path="/cpp/*" element={<CppRoutes />} />
-
+					<Route path="/handouts/*" element={<HandoutsRoutes />} />
 					{DesignSystemPlayground ? (
 						<Route
 							path="/dev/design-system"

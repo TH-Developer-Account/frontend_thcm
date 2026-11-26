@@ -1,3 +1,4 @@
+// Target: modules/marketing/handouts/HandoutsPage.tsx
 // handouts/HandoutsPage.tsx
 // Handouts list. One page, up to three queues by permission:
 //   My requests (requesters) · To approve (approver) · To deliver (delivery team)
@@ -168,10 +169,6 @@ export default function HandoutsPage() {
             ariaLabel: "Handouts page location",
             breadcrumbs: [
               { label: "Home Screen", href: "/" },
-              {
-                label: "EPC Listing",
-                href: "/marketing/activity-planner/listing",
-              },
               { label: "Handouts" },
             ],
             separator: "›",
