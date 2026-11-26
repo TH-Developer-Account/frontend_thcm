@@ -1,0 +1,63 @@
+/* modules/audit/shared/execution/audit-execution.css
+ *
+ * Layout primitives for audit screens shared by Dealer Audit and Factory
+ * Audit. Import once, e.g. from the module's route file or main CSS:
+ *   @import "../modules/audit/shared/execution/audit-execution.css";
+ * Colours/spacing use the existing design tokens only.
+ */
+
+.audit-page {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+	gap: var(--space-4, 1rem);
+}
+
+.audit-page-narrow {
+	max-width: 56rem;
+	margin-inline: auto;
+}
+
+.audit-stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3, 0.75rem);
+}
+
+/* Room for the mobile sticky action bar so content is never hidden. */
+.audit-stack-pad-footer {
+	padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+}
+
+.audit-sticky-footer {
+	position: fixed;
+	inset-inline: 0;
+	bottom: 0;
+	z-index: 30;
+	border-top: 1px solid var(--color-border-default);
+	background-color: var(--color-bg-surface, #fff);
+	padding: var(--space-2, 0.5rem) var(--space-4, 1rem)
+		calc(var(--space-2, 0.5rem) + env(safe-area-inset-bottom));
+}
+
+.audit-sticky-footer-inner {
+	display: flex;
+	gap: var(--space-2, 0.5rem);
+}
+
+.audit-inline-footer {
+	gap: var(--space-2, 0.5rem);
+	border-top: 1px solid var(--color-border-default);
+	padding-top: var(--space-3, 0.75rem);
+}
+
+/* The item workspace owns its own scrolling on small screens. */
+.audit-item-page {
+	min-height: 100%;
+}
+
+@media (min-width: 640px) {
+	.audit-stack-pad-footer {
+		padding-bottom: 0;
+	}
+}

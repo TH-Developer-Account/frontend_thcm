@@ -21,6 +21,8 @@ const VIEWPORT_GAP = 8;
 
 type DatePickerInputProps = {
 	label?: string;
+	/** Shows the same red asterisk the other form fields use. */
+	required?: boolean;
 	mode?: PickerMode;
 	value?: Date | DateRange | undefined;
 	onChange?: (value: Date | DateRange | undefined) => void;
@@ -102,6 +104,7 @@ const calendarClassNames = {
 
 export default function DatePickerInput({
 	label,
+	required = false,
 	mode = "range",
 	value,
 	onChange,
@@ -295,7 +298,9 @@ export default function DatePickerInput({
 						}}
 						className="date-picker-popover"
 						role="dialog"
-						aria-label={label ? `Choose ${label.toLowerCase()}` : "Choose a date"}
+						aria-label={
+							label ? `Choose ${label.toLowerCase()}` : "Choose a date"
+						}
 					>
 						{mode === "single" ? (
 							<DayPicker
@@ -326,7 +331,12 @@ export default function DatePickerInput({
 						)}
 
 						<div className="date-picker-footer">
-							<Button type="button" size="sm" onClick={handleCancel} text="Cancel" />
+							<Button
+								type="button"
+								size="sm"
+								onClick={handleCancel}
+								text="Cancel"
+							/>
 
 							<Button
 								type="button"
@@ -363,24 +373,30 @@ export default function DatePickerInput({
 					disabled={disabled}
 					onClick={() => (open ? handleCancel() : handleOpen())}
 					aria-invalid={!!error}
+					aria-required={required || undefined}
 					aria-describedby={error ? errorId : undefined}
 					aria-labelledby={label ? `${labelId} ${valueId}` : undefined}
 					aria-haspopup="dialog"
 					aria-expanded={open}
 					className={`
-						form-input flex  w-full items-center justify-between  
+						form-input flex  w-full items-center justify-between
 						${error ? "form-input-error" : ""}
 						${disabled ? "form-input-disabled" : ""}
 					`}
 				>
 					<span
 						id={valueId}
-						className={displayValue ? "date-picker-value" : "date-picker-placeholder"}
+						className={
+							displayValue ? "date-picker-value" : "date-picker-placeholder"
+						}
 					>
 						{displayValue || finalPlaceholder}
 					</span>
 
-					<CalendarDaysIcon className="date-picker-trigger-icon" aria-hidden="true" />
+					<CalendarDaysIcon
+						className="date-picker-trigger-icon"
+						aria-hidden="true"
+					/>
 				</button>
 			</div>
 

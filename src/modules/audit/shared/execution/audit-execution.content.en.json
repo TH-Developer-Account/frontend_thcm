@@ -1,0 +1,172 @@
+{
+  "sla": {
+    "today": "today",
+    "day": "day",
+    "days": "days"
+  },
+  "validation": {
+    "scoreRequired": "Select a score.",
+    "scoreNotAllowed": "Score must be one of: {allowed}.",
+    "scoreOutOfRange": "Score must be between {min} and {max}.",
+    "remarksTooLong": "Remarks cannot exceed {max} characters.",
+    "evidenceMin": "Add at least {min} photo(s) with location.",
+    "evidenceMax": "A maximum of {max} photo(s) is allowed.",
+    "evidenceUploading": "Wait for the photos to finish uploading.",
+    "evidenceFailed": "A photo failed to upload. Retry or remove it.",
+    "evidenceNeedsLocation": "Every photo needs a location. Retake the photo with location enabled.",
+    "reviewerDecisionRequired": "Select a decision.",
+    "reviewerScoreRequired": "Enter the reviewer score.",
+    "reviewerRemarksRequired": "Explain the deficiency in the remarks.",
+    "scoreChangeReasonRequired": "Give a reason for changing the self-assessed score.",
+    "notApplicableNotAllowed": "Not applicable is not allowed. Score the parameter 0 instead.",
+    "reasonTooLong": "Cannot exceed {max} characters.",
+    "clarificationResponseRequired": "Enter your response.",
+    "clarificationNotAnswered": "This parameter still needs a corrected answer and a response.",
+    "itemIncomplete": "This parameter is incomplete.",
+    "itemNotReviewed": "This parameter has not been reviewed."
+  },
+  "item": {
+    "leaveWhileUploading": "Photos are still uploading. Leaving now may lose them. Leave anyway?",
+    "leaveWithUnsavedDraft": "You have unsaved changes on this parameter. Leave without saving?"
+  },
+  "evidence": {
+    "uploadFailed": "Evidence could not be uploaded. Retry before submitting.",
+    "deleteFailed": "The photo could not be removed. Try again.",
+    "locationUnsupported": "This device cannot provide a location. Use a device with location support.",
+    "locationDenied": "Location access is blocked. Allow location in your browser settings to add photos.",
+    "locationFailed": "Your location could not be determined. Move to an open area and try again.",
+    "notLivePhoto": "Use a photo taken just now with the camera.",
+    "offlineNotice": "You are offline. Photos will upload when the connection returns.",
+    "permissionHint": "Camera and location access are needed so each photo is verified with where and when it was taken.",
+    "processing": "Processing photo…",
+    "takePhoto": "Take photo",
+    "addPhoto": "Add another photo",
+    "counter": "{count}/{max} photos",
+    "minimumRequired": "minimum {min} required",
+    "previewTitle": "Photo preview",
+    "photoAlt": "Evidence photo {name}",
+    "viewPhoto": "View {name}",
+    "removePhoto": "Remove {name}",
+    "uploading": "Uploading",
+    "failed": "Upload failed",
+    "queued": "Waiting to upload",
+    "uploaded": "Uploaded",
+    "retry": "Retry"
+  },
+  "due": {
+    "notSet": "No due date",
+    "overdueBy": "Overdue by {distance}",
+    "dueToday": "Due today",
+    "dueIn": "Due in {distance}"
+  },
+  "reminders": {
+    "regionLabel": "Reminders",
+    "titles": {
+      "info": "Reminder",
+      "warning": "Action needed soon",
+      "danger": "Urgent"
+    }
+  },
+  "progress": {
+    "counter": "{completed} of {total} done",
+    "selfScore": "Self-assessed score",
+    "finalScore": "Final score"
+  },
+  "save": {
+    "saving": "Saving…",
+    "saved": "Saved",
+    "failed": "Could not save.",
+    "retry": "Retry",
+    "unsaved": "Unsaved changes"
+  },
+  "selfAssessment": {
+    "scoreLabel": "Your score",
+    "scoreRange": "(min {min}, max {max})",
+    "remarksLabel": "Remarks",
+    "remarksPlaceholder": "Add anything the reviewer should know"
+  },
+  "answer": {
+    "score": "Self-assessed score",
+    "answeredAt": "Answered",
+    "notAnswered": "Not answered yet",
+    "remarks": "Self-assessment remarks",
+    "noRemarks": "No remarks",
+    "photoCount": "{count} photos"
+  },
+  "review": {
+    "decisionLabel": "Decision",
+    "decisions": {
+      "PENDING": "Not reviewed",
+      "ACCEPTED": "Accepted",
+      "CLARIFICATION_REQUIRED": "Needs clarification",
+      "DEFICIENT": "Deficient",
+      "NOT_APPLICABLE": "Not applicable"
+    },
+    "scoreLabel": "Reviewer score",
+    "scoreChangeReasonLabel": "Reason for changing the score",
+    "scoreChangeReasonPlaceholder": "Why does the score differ from the self-assessment?",
+    "remarksLabel": "Reviewer remarks",
+    "remarksPlaceholder": "Explain any deficiency or note",
+    "notReviewed": "Not reviewed yet.",
+    "noRemarks": "No remarks"
+  },
+  "clarification": {
+    "heading": "Clarification",
+    "openHeading": "Clarification requested",
+    "respondedHeading": "Clarification answered",
+    "dueLabel": "respond by",
+    "yourResponse": "Response",
+    "responseLabel": "Your response",
+    "responsePlaceholder": "Explain what was corrected",
+    "sending": "Sending…",
+    "send": "Send response"
+  },
+  "submissionSummary": {
+    "count": "{count} parameter(s) need attention. Select one to open it."
+  },
+  "history": {
+    "heading": "Audit trail",
+    "loading": "Loading history…",
+    "failed": "The audit trail could not be loaded.",
+    "retry": "Retry",
+    "empty": "No activity yet.",
+    "actions": {
+      "CREATED": "Audit created",
+      "ASSIGNED": "Reviewer assigned",
+      "REASSIGNED": "Reviewer reassigned",
+      "STARTED": "Self-assessment started",
+      "SUBMITTED": "Submitted",
+      "REVIEW_STARTED": "Review started",
+      "ITEM_REVIEWED": "Parameter reviewed",
+      "CLARIFICATION_RAISED": "Clarification requested",
+      "CLARIFICATION_RESPONDED": "Clarification answered",
+      "RESUBMITTED": "Resubmitted",
+      "REVIEW_SUBMITTED": "Review submitted",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "AUTO_FINALIZED": "Finalised automatically (self-assessed score taken as final)",
+      "CLOSED": "Closed",
+      "RE_AUDIT_CREATED": "Re-audit created",
+      "EXPIRED": "Expired",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "itemList": {
+    "reviewerScorePrefix": "Reviewer",
+    "states": {
+      "CLARIFICATION_OPEN": "Clarification needed",
+      "CLARIFICATION_RESPONDED": "Clarification answered",
+      "COMPLETE": "Completed",
+      "PENDING": "Not completed"
+    }
+  },
+  "itemShell": {
+    "position": "{index} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "backToList": "Back to parameter list",
+    "criteria": "Criteria",
+    "maxScore": "Maximum score {max}",
+    "notScored": "Not scored"
+  }
+}

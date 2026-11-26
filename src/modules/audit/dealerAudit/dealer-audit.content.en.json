@@ -1,0 +1,328 @@
+{
+  "status": {
+    "DRAFT": "Draft",
+    "IN_PROGRESS": "In progress",
+    "SUBMITTED": "Submitted",
+    "UNDER_REVIEW": "Under review",
+    "CLARIFICATION_REQUIRED": "Clarification required",
+    "RECTIFICATION_IN_PROGRESS": "Rectification in progress",
+    "RESUBMITTED": "Resubmitted",
+    "PENDING_APPROVAL": "Pending approval",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "IMPROVEMENT_REQUIRED": "Improvement required",
+    "CLOSED": "Closed",
+    "EXPIRED": "Expired",
+    "CANCELLED": "Cancelled"
+  },
+  "period": {
+    "fiscalYear": "FY {start}-{end}",
+    "quarter": "Q{quarter} {year}"
+  },
+  "reminders": {
+    "clarificationSubject": "Your clarification response",
+    "waitingClarificationSubject": "The dealer's clarification response",
+    "selfAssessmentSubject": "Your self-assessment",
+    "waitingSelfAssessmentSubject": "The dealer's self-assessment",
+    "overdue": "{subject} is overdue by {distance}.",
+    "dueToday": "{subject} is due today.",
+    "dueIn": "{subject} is due in {distance}.",
+    "periodEndedExpiry": "This audit period has ended without a submission. The audit has expired or will expire.",
+    "periodEndsExpiry": "The audit period ends in {distance}. Submit before then or the audit will expire.",
+    "periodEndedAutoFinalizeDealer": "The audit period has ended. Your initial score will be used as the final score.",
+    "periodEndsAutoFinalizeDealer": "The audit period ends in {distance}. If the review is not finished, your initial score will be used as the final score.",
+    "periodEndedAutoFinalizeInternal": "The audit period has ended. The dealer's initial score will be taken as final.",
+    "periodEndsAutoFinalizeInternal": "The audit period ends in {distance}. Complete the review, or the dealer's initial score will be taken as final."
+  },
+  "validation": {
+    "reasonTooShort": "Enter at least {min} characters.",
+    "reasonTooLong": "Cannot exceed {max} characters.",
+    "clarificationRemarksRequired": "Enter what the dealer needs to clarify.",
+    "clarificationItemsRequired": "Select at least one parameter.",
+    "templateRequired": "Select a checklist template.",
+    "dealersRequired": "Select at least one dealer.",
+    "reviewerRequired": "Select a reviewer.",
+    "quarterRequired": "Select a quarter.",
+    "dueDateRequired": "Select a due date.",
+    "dueDateInvalid": "Enter a valid date.",
+    "dueDatePast": "Due date cannot be in the past.",
+    "rejectReasonRequired": "Enter the reason for rejection.",
+    "reassignReviewerRequired": "Select a reviewer."
+  },
+  "toasts": {
+    "itemSaved": {
+      "title": "Parameter saved",
+      "description": "Your answer has been saved."
+    },
+    "auditSubmitted": {
+      "title": "Audit submitted",
+      "description": "The audit has been submitted for review."
+    },
+    "reviewStarted": {
+      "title": "Review started",
+      "description": "You can now score each parameter."
+    },
+    "itemReviewed": {
+      "title": "Parameter reviewed",
+      "description": "Your review has been saved."
+    },
+    "clarificationRaised": {
+      "title": "Clarification requested",
+      "description": "The dealer has been asked to respond."
+    },
+    "clarificationResponded": {
+      "title": "Response sent",
+      "description": "Your clarification has been sent for review."
+    },
+    "reviewSubmitted": {
+      "title": "Review submitted",
+      "description": "The review has been sent for approval."
+    },
+    "approved": {
+      "title": "Audit approved",
+      "description": "The final score and report are now available."
+    },
+    "rejected": {
+      "title": "Audit rejected",
+      "description": "The audit has been rejected."
+    },
+    "reassigned": {
+      "title": "Reviewer reassigned",
+      "description": "The new reviewer has been assigned."
+    },
+    "reAuditCreated": {
+      "title": "Re-audit created",
+      "description": "A new audit has been created for improvement."
+    },
+    "auditsCreated": {
+      "title": "Audits created",
+      "description": "{count} audit(s) were created and assigned."
+    }
+  },
+  "ui": {
+    "dialogs": {
+      "cancel": "Cancel",
+      "approve": {
+        "title": "Approve audit",
+        "description": "Approving fixes the final score and releases the report to the dealer.",
+        "remarksLabel": "Approval comments (optional)",
+        "confirm": "Approve"
+      },
+      "reject": {
+        "title": "Reject audit",
+        "description": "Rejecting ends this audit. The reason is kept in the audit trail.",
+        "reasonLabel": "Reason for rejection",
+        "confirm": "Reject"
+      },
+      "clarification": {
+        "title": "Request clarification",
+        "description": "The dealer will be asked to respond only for the parameters you select.",
+        "itemsLabel": "Parameters",
+        "remarksLabel": "What needs to be clarified?",
+        "confirm": "Send to dealer"
+      },
+      "reassign": {
+        "title": "Reassign reviewer",
+        "description": "The previous assignment stays in the audit history.",
+        "reviewerLabel": "New reviewer",
+        "loadingReviewers": "Loading reviewers…",
+        "reviewerPlaceholder": "Select a reviewer",
+        "reviewersFailed": "Reviewers could not be loaded.",
+        "reasonLabel": "Reason",
+        "confirm": "Reassign"
+      },
+      "reAudit": {
+        "title": "Create re-audit",
+        "description": "A new audit is created for improvement. The original audit is not changed.",
+        "reasonLabel": "Reason for re-audit",
+        "dueDateLabel": "Due date",
+        "confirm": "Create re-audit"
+      }
+    },
+    "guard": {
+      "loading": "Checking access…",
+      "deniedTitle": "Access restricted",
+      "deniedDescription": "You do not have permission to view this page."
+    },
+    "list": {
+      "title": "Dealer audits",
+      "subtitle": "Quarterly and yearly audits of dealer facilities.",
+      "create": "Create audits",
+      "searchPlaceholder": "Search dealer, code or audit number",
+      "allStatuses": "All statuses",
+      "allYears": "All years",
+      "allQuarters": "All quarters",
+      "quarters": {
+        "1": "Q1",
+        "2": "Q2",
+        "3": "Q3",
+        "4": "Q4"
+      },
+      "filters": {
+        "status": "Status"
+      },
+      "clearFilters": "Clear filters",
+      "columns": {
+        "audit": "Audit",
+        "dealer": "Dealer",
+        "period": "Period",
+        "status": "Status",
+        "due": "Due",
+        "progress": "Done",
+        "score": "Score",
+        "reviewer": "Reviewer"
+      },
+      "emptyTitle": "No audits found",
+      "emptyDescription": "Try adjusting your filters or search.",
+      "errorTitle": "Audits could not be loaded",
+      "retry": "Retry",
+      "loading": "Loading audits…",
+      "tableLabel": "Dealer audits",
+      "page": "Page"
+    },
+    "actions": {
+      "openChecklist": "Open checklist",
+      "continueReview": "Continue review",
+      "submitSelf": "Submit for review",
+      "startReview": "Start review",
+      "submitReview": "Submit review",
+      "requestClarification": "Request clarification",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reassign": "Reassign reviewer",
+      "reAudit": "Re-audit",
+      "viewReport": "View report",
+      "submitSelfBlocked": "Complete these parameters before submitting",
+      "submitReviewBlocked": "Review these parameters before submitting",
+      "confirm": {
+        "submitSelfTitle": "Submit self-assessment?",
+        "submitSelfDescription": "Your answers will be sent for review and can no longer be changed unless the reviewer asks for a clarification.",
+        "startReviewTitle": "Start review?",
+        "startReviewDescription": "You will be able to score each parameter. The dealer's answers stay unchanged.",
+        "submitReviewTitle": "Submit review?",
+        "submitReviewDescription": "The review goes to the approver. You cannot change scores afterwards."
+      }
+    },
+    "detail": {
+      "back": "Back to audits",
+      "loading": "Loading audit…",
+      "errorTitle": "This audit could not be loaded",
+      "retry": "Retry",
+      "deniedTitle": "Access restricted",
+      "deniedDescription": "You do not have permission to view this audit.",
+      "autoFinalizedTitle": "Dealer score taken as final",
+      "autoFinalizedDescription": "The review was not completed before the period ended, so the dealer's initial score was taken as the final score.",
+      "checklistErrorTitle": "The checklist could not be loaded",
+      "actionsTitle": "Actions",
+      "summaryTitle": "Audit details",
+      "progressTitle": "Progress",
+      "historyTitle": "Audit trail",
+      "dealer": "Dealer",
+      "location": "Location",
+      "template": "Checklist",
+      "period": "Period",
+      "due": "Due",
+      "reviewer": "Reviewer",
+      "submittedAt": "Submitted",
+      "closedAt": "Closed",
+      "reviewProgress": "Parameters reviewed",
+      "selfProgress": "Parameters completed",
+      "loadingChecklist": "Loading progress…",
+      "viewChecklist": "View all parameters"
+    },
+    "checklist": {
+      "back": "Back to audit",
+      "loading": "Loading checklist…",
+      "errorTitle": "The checklist could not be loaded",
+      "retry": "Retry",
+      "deniedTitle": "Access restricted",
+      "deniedDescription": "You do not have permission to view this audit.",
+      "reviewProgress": "Parameters reviewed",
+      "selfProgress": "Parameters completed",
+      "filterLabel": "Filter parameters",
+      "filters": {
+        "all": "All",
+        "pending": "Pending",
+        "completed": "Completed",
+        "toReview": "To review",
+        "reviewed": "Reviewed"
+      },
+      "empty": "This audit has no parameters.",
+      "emptyFiltered": "No parameters match this filter.",
+      "actionsTitle": "Actions"
+    },
+    "itemPage": {
+      "loading": "Loading parameter…",
+      "errorTitle": "This parameter could not be loaded",
+      "retry": "Retry",
+      "deniedTitle": "Access restricted",
+      "deniedDescription": "You do not have permission to view this audit.",
+      "notFoundTitle": "Parameter not found",
+      "notFoundDescription": "It may have been removed, or the link is wrong.",
+      "backToList": "Back to parameters",
+      "selfProgress": "Parameters completed",
+      "reviewProgress": "Parameters reviewed",
+      "yourAnswer": "Your answer",
+      "dealerAnswer": "Dealer's answer",
+      "yourReview": "Your review",
+      "reviewerResult": "Reviewer result",
+      "uploadingHint": "Photos are still uploading. Wait before continuing.",
+      "saveAndNext": "Save & next",
+      "saveAndFinish": "Save & finish",
+      "saveReviewAndNext": "Save review & next",
+      "saveReviewAndFinish": "Save review & finish",
+      "next": "Next"
+    },
+    "create": {
+      "back": "Back to audits",
+      "title": "Create audits",
+      "subtitle": "One audit is created for each selected dealer.",
+      "loading": "Loading…",
+      "retry": "Retry",
+      "mastersFailedTitle": "Some options could not be loaded",
+      "mastersFailedDescription": "Checklists, dealers or reviewers failed to load. Retry before creating audits.",
+      "checklistSection": "Checklist",
+      "template": "Checklist template",
+      "templatePlaceholder": "Select a published checklist",
+      "templateHelp": "Only published checklists can be used. Existing audits keep their original version.",
+      "periodSection": "Period and deadline",
+      "periodType": "Audit cycle",
+      "periodTypes": {
+        "QUARTERLY": "Quarterly",
+        "YEARLY": "Yearly"
+      },
+      "year": "Year",
+      "quarter": "Quarter",
+      "dueDate": "Due date",
+      "assignmentSection": "Assignment",
+      "reviewer": "Reviewer",
+      "reviewerPlaceholder": "Select a reviewer",
+      "dealers": "Dealers",
+      "dealersPlaceholder": "Search and select dealers",
+      "dealersSelected": "{count} selected",
+      "selectAllDealers": "Select all",
+      "clearDealers": "Clear",
+      "cancel": "Cancel",
+      "create": "Create audits",
+      "creating": "Creating…"
+    },
+    "report": {
+      "back": "Back to audit",
+      "title": "Audit report",
+      "loading": "Loading report…",
+      "errorTitle": "The report could not be loaded",
+      "retry": "Retry",
+      "unavailableTitle": "Report not available yet",
+      "unavailableDescription": "The report is available once the audit has been approved.",
+      "finalScore": "Final score",
+      "selfScore": "Dealer's initial score",
+      "sections": "Section scores",
+      "section": "Section",
+      "score": "Score",
+      "percent": "%",
+      "generated": "Generated {date}",
+      "print": "Print",
+      "download": "Download"
+    }
+  }
+}

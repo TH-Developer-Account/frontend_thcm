@@ -18,6 +18,7 @@ import WorkflowRoutes from "./workflowRoutes";
 import { GuestRoutesWrapper } from "./guestRoutes";
 import FullScreenLoader from "./FullScreenLoader";
 import CppRoutes from "./cppRoutes";
+import DealerAuditRoutes from "./DealerAuditRoutes";
 
 const ForbiddenPage = lazy(() => import("../Forbidden"));
 const HomeScreen = lazy(() => import("../containers/HomeScreen"));
@@ -84,6 +85,7 @@ const AuthenticatedRoutes = () => {
 							element={<DesignSystemPlayground />}
 						/>
 					) : null}
+					<Route path="/audit/dealer/*" element={<DealerAuditRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

@@ -9,6 +9,8 @@ import {
 	Gift,
 	GiftIcon,
 	Handshake,
+	Inspect,
+	InspectIcon,
 	Megaphone,
 	MonitorCog,
 	Network,
@@ -119,4 +121,13 @@ export const actions: HomeAction[] = [
 		access: { kind: "administration" },
 		isActive: false,
 	},
-];
+	{
+		icon: Inspect,
+		decorIcon: InspectIcon,
+		title: "Dealer Audit",
+		description: "Audit for dealers.",
+		path: "/audit/dealer/checklist/listing",
+		access: { kind: "app", appKey: "DEALER_AUDIT" },
+		isActive: false,
+	},
+] as const;

@@ -1,0 +1,732 @@
+.dealer-audit-page .ui-card-header {
+	padding-bottom: var(--space-3);
+}
+
+.checklist-card-grid {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	align-items: stretch;
+	gap: var(--space-4);
+}
+
+.checklist-card-grid > * {
+	min-width: 0;
+}
+
+.checklist-card {
+	--checklist-accent: var(--color-brand, #f4510b);
+	--checklist-ink: var(--color-text-primary, #08234a);
+	--checklist-muted: var(--color-text-secondary, #64748b);
+	position: relative;
+	display: flex;
+	min-width: 0;
+	height: 100%;
+	flex-direction: column;
+	overflow: hidden;
+	border-color: var(--color-border, #d7e0eb);
+	border-radius: 1.5rem;
+	background: var(--color-surface, #fff);
+	box-shadow: 0 12px 30px rgb(15 35 65 / 5%);
+	transition:
+		border-color 160ms ease,
+		box-shadow 160ms ease,
+		transform 160ms ease;
+}
+
+.checklist-card::before {
+	position: absolute;
+	inset-block: 0.75rem;
+	inset-inline-start: 0;
+	z-index: 3;
+	width: 0.2rem;
+	border-radius: 0 999px 999px 0;
+	background: var(--color-brand);
+	content: "";
+	pointer-events: none;
+	opacity: 0;
+	transform: scaleY(0.25);
+	transform-origin: center;
+	transition:
+		opacity 160ms ease,
+		transform 200ms ease;
+}
+
+.checklist-card:hover::before,
+.checklist-card:focus-within::before {
+	opacity: 1;
+	transform: scaleY(1);
+}
+
+.checklist-card-interactive {
+	cursor: pointer;
+}
+.checklist-card-hit-area {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+}
+.checklist-card-hit-area:focus-visible {
+	outline: 3px solid
+		color-mix(in srgb, var(--checklist-accent) 30%, transparent);
+	outline-offset: -3px;
+	border-radius: inherit;
+}
+.checklist-card-action-slot,
+.checklist-card-footer .avatar-wrapper {
+	position: relative;
+	z-index: 2;
+}
+.checklist-card-interactive:hover {
+	border-color: color-mix(in srgb, var(--checklist-accent) 32%, #d7e0eb);
+	box-shadow: 0 16px 36px rgb(15 35 65 / 9%);
+	transform: translateY(-2px);
+}
+.checklist-card-interactive:focus-visible {
+	outline: 3px solid
+		color-mix(in srgb, var(--checklist-accent) 30%, transparent);
+	outline-offset: 3px;
+}
+
+.checklist-card-body {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+	flex-direction: column;
+	padding: var(--space-2);
+}
+.checklist-card-heading-row {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	gap: var(--space-2);
+	align-items: start;
+}
+.checklist-card-icon {
+	display: grid;
+	width: 4rem;
+	height: 4rem;
+	place-items: center;
+	border-radius: 1.1rem;
+	color: var(--checklist-accent);
+	background: color-mix(in srgb, var(--checklist-accent) 9%, white);
+}
+.checklist-card-copy {
+	min-width: 0;
+}
+.checklist-card {
+	display: flex;
+	width: 100%;
+	height: 100%;
+	max-height: 18rem;
+	min-width: 0;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Body occupies all available space above footer */
+.checklist-card-body {
+	display: flex;
+	min-width: 0;
+	min-height: 0;
+	flex: 1;
+	flex-direction: column;
+}
+
+/* Prevent icon/actions from shrinking the text area incorrectly */
+.checklist-card-copy {
+	min-width: 0;
+}
+
+/* Always reserves exactly two title lines */
+.checklist-card-title {
+	display: -webkit-box;
+	/* min-height: calc(1rem * 1.3 * 2);
+	max-height: calc(1rem * 1.3 * 2); */
+	margin: 0;
+	overflow: hidden;
+	color: var(--checklist-ink);
+	font-size: 1rem;
+	font-weight: 750;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+
+/* Always reserves exactly two description lines */
+.checklist-card-description {
+	display: -webkit-box;
+	min-height: calc(0.86rem * 1.5 * 2);
+	max-height: calc(0.86rem * 1.5 * 2);
+	margin: 0.4rem 0 0;
+	overflow: hidden;
+	color: var(--checklist-muted);
+	font-size: 0.86rem;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+
+/* Badges cannot increase the card height */
+.checklist-card-meta {
+	display: flex;
+	min-height: 1.75rem;
+	max-height: 3.75rem;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 0.5rem;
+	margin-top: 1rem;
+	overflow: hidden;
+}
+
+/* Push progress section to the bottom */
+.checklist-card-readiness {
+	margin-top: auto;
+	padding-top: 1rem;
+}
+
+/* Footer remains identical across cards */
+.checklist-card-footer {
+	display: flex;
+	min-height: 3.25rem;
+	flex: 0 0 3.25rem;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	overflow: hidden;
+}
+.checklist-card-actions {
+	color: var(--checklist-muted);
+}
+.checklist-card-meta {
+	display: flex;
+	min-height: 1.75rem;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	gap: 0.55rem;
+	margin-top: 1.45rem;
+}
+.checklist-card-readiness {
+	margin-top: auto;
+	padding-top: 1.45rem;
+}
+.checklist-card-readiness-label {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	color: var(--checklist-muted);
+	font-size: 0.9rem;
+}
+.checklist-card-readiness-label strong {
+	color: var(--checklist-ink);
+}
+.checklist-card-progress {
+	height: 0.48rem;
+	margin-top: 0.55rem;
+	overflow: hidden;
+	border-radius: 999px;
+	background: var(--color-neutral-100);
+}
+
+.checklist-card-progress > span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: var(--color-brand-soft);
+	transition:
+		width 240ms ease,
+		background-color 160ms ease;
+}
+
+/* Green becomes meaningful only when readiness is complete */
+.checklist-card-progress.is-complete > span {
+	background: var(--color-brand);
+}
+.checklist-card-footer {
+	display: flex;
+	min-height: 3.25rem;
+	align-items: center;
+	justify-content: space-between;
+	flex-shrink: 0;
+	padding: var(--space-1) 0;
+	gap: 1rem;
+	margin: 0 1.85rem;
+	border-top: 1px solid var(--color-border-subtle, #e7edf4);
+	color: var(--checklist-muted);
+	font-size: 0.9rem;
+}
+.checklist-card-owners {
+	display: flex;
+	align-items: center;
+	padding-left: 0.4rem;
+}
+.checklist-card-owners .avatar-wrapper {
+	margin-left: -0.4rem;
+}
+.checklist-card-owners .avatar {
+	border: 2px solid var(--color-surface, #fff);
+}
+.checklist-card-owner-overflow {
+	display: grid;
+	width: 2rem;
+	height: 2rem;
+	margin-left: -0.4rem;
+	place-items: center;
+	border: 2px solid #fff;
+	border-radius: 999px;
+	color: #fff;
+	background: #475569;
+	font-size: 0.7rem;
+	font-weight: 700;
+}
+@media (max-width: 1500px) {
+	.checklist-card-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 1200px) {
+	.checklist-card-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 900px) {
+	.checklist-card-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 640px) {
+	.checklist-card-grid {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+	}
+
+	.checklist-card {
+		height: auto;
+		max-height: none;
+		min-height: 17rem;
+	}
+
+	.checklist-card-title {
+		font-size: 1rem;
+	}
+
+	.checklist-card-footer {
+		min-height: 3.5rem;
+		flex-basis: 3.5rem;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.checklist-card,
+	.checklist-card-progress > span {
+		transition: none;
+	}
+}
+/* ------------------------------------------------------------------ */
+/* Dealer Audit — shared page chrome                                   */
+/* Uses existing design tokens (--color-brand, --color-text-primary,   */
+/* --color-text-secondary, --color-border) already defined globally.   */
+/* Add this file next to checklist-card.css and import it once.        */
+/* ------------------------------------------------------------------ */
+
+.dealer-audit-page {
+	/* max-width: 56rem; matches previous max-w-4xl */
+}
+
+.dealer-audit-page-narrow {
+	/* max-width: 48rem; matches previous max-w-3xl */
+}
+
+.dealer-audit-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+/* Room for the fixed action bar on mobile — cleared on sm+ via `sm:pb-0`
+   on the element, since the desktop footer is inline, not fixed. */
+.dealer-audit-stack-pad-footer {
+	padding-bottom: var(--space-1);
+}
+
+.dealer-audit-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+}
+
+.dealer-audit-header-copy {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.dealer-audit-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--color-text-primary, #08234a);
+}
+
+.dealer-audit-title-sm {
+	font-size: 1rem;
+}
+
+.dealer-audit-subtitle {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.875rem;
+	color: var(--color-text-secondary, #64748b);
+}
+
+.dealer-audit-category-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+/* Prev/Next item pill on the checklist execution screen */
+.dealer-audit-item-nav {
+	display: flex;
+	align-items: center;
+	border: 1px solid var(--color-border, #d7e0eb);
+	border-radius: 0.5rem;
+	background: var(--color-surface, #fff);
+}
+
+.dealer-audit-item-nav-count {
+	white-space: nowrap;
+	padding-inline: 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--color-text-primary, #08234a);
+}
+
+/* Sticky bottom action bar — mobile only (hidden sm+ via Tailwind's sm:hidden) */
+.dealer-audit-sticky-footer {
+	position: fixed;
+	inset-inline: 0;
+	bottom: 0;
+	z-index: 30;
+	border-top: 1px solid var(--color-border, #d7e0eb);
+	background: color-mix(in srgb, var(--color-surface, #fff) 95%, transparent);
+	backdrop-filter: blur(6px);
+	padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom));
+}
+
+.dealer-audit-sticky-footer-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-inline: auto;
+	max-width: 100%;
+}
+
+/* Desktop/tablet — buttons render inline after the content, no fixed bar.
+   Shown via Tailwind's `hidden sm:flex` on the element. */
+.dealer-audit-inline-footer {
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--color-border, #d7e0eb);
+}
+
+/* Prevent the swipe container from causing page-level horizontal scroll */
+.dealer-audit-item-page {
+	touch-action: pan-y;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dealer Audit — score selector                                      */
+/* ------------------------------------------------------------------ */
+.score-selector {
+	--score-accent: var(--color-brand, #f4510b);
+	--score-ink: var(--color-text-primary, #08234a);
+	--score-muted: var(--color-text-secondary, #64748b);
+	--score-border: var(--color-border, #d7e0eb);
+	--score-surface: var(--color-surface, #fff);
+	--score-surface-muted: var(--color-surface-muted, #f8fafc);
+
+	--score-selected: var(--color-success, #059669);
+	--score-selected-soft: var(--color-success-soft, #ecfdf5);
+	--score-selected-ink: var(--color-success-dark, #047857);
+}
+
+.score-selector-option {
+	position: relative;
+	min-height: 3.75rem;
+	border: 1px solid var(--score-border);
+	border-radius: 0.5rem;
+	color: var(--score-ink);
+	background: var(--score-surface);
+	cursor: pointer;
+	transition:
+		color 160ms ease,
+		background-color 160ms ease,
+		border-color 160ms ease,
+		box-shadow 160ms ease,
+		transform 160ms ease;
+}
+
+.score-selector-option:hover:not(:disabled) {
+	border-color: color-mix(
+		in srgb,
+		var(--score-accent) 50%,
+		var(--score-border)
+	);
+	background: color-mix(in srgb, var(--score-accent) 4%, var(--score-surface));
+	transform: translateY(-1px);
+}
+
+/* Selected score remains visible and is highlighted in green */
+.score-selector-option[data-selected="true"] {
+	border-color: var(--score-selected);
+	color: var(--score-selected-ink);
+	background: var(--score-selected-soft);
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--score-selected) 18%, transparent),
+		0 4px 10px rgb(5 150 105 / 10%);
+}
+
+.score-selector-option[data-selected="true"]::after {
+	position: absolute;
+	top: 0.3rem;
+	right: 0.3rem;
+	width: 0.4rem;
+	height: 0.4rem;
+	border-radius: 999px;
+	background: var(--score-selected);
+	content: "";
+}
+
+.score-selector-option[data-selected="true"] .score-selector-value {
+	color: var(--score-selected);
+}
+
+.score-selector-option[data-selected="true"] .score-selector-label {
+	color: var(--score-selected-ink);
+	font-weight: 700;
+}
+
+.score-selector-option:focus-visible {
+	z-index: 1;
+	outline: 3px solid color-mix(in srgb, var(--score-accent) 28%, transparent);
+	outline-offset: 2px;
+}
+
+.score-selector-option:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+.score-selector-option:disabled {
+	border-color: var(--score-border);
+	color: var(--score-muted);
+	background: var(--score-surface-muted);
+	cursor: not-allowed;
+	opacity: 0.58;
+}
+
+.score-selector-option[data-selected="true"]:disabled {
+	border-color: var(--score-selected);
+	color: var(--score-selected-ink);
+	background: var(--score-selected-soft);
+}
+
+.score-selector-value {
+	line-height: 1;
+}
+
+.score-selector-label {
+	display: block;
+	overflow: hidden;
+	color: var(--score-muted);
+	text-overflow: ellipsis;
+}
+
+.score-selector-feedback {
+	border: 1px solid color-mix(in srgb, var(--score-selected) 18%, transparent);
+	border-radius: 0.5rem;
+	color: var(--score-selected-ink);
+	background: var(--score-selected-soft);
+	line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+	.score-selector-option {
+		min-height: 3.5rem;
+		padding-inline: 0.2rem;
+	}
+
+	.score-selector-label {
+		font-size: 0.56rem;
+		line-height: 1.1;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.score-selector-option {
+		transition: none;
+	}
+}
+/* ------------------------------------------------------------------ */
+/* Dealer Audit — checklist item detail card                          */
+/* Keeps the page layout unchanged.                                   */
+/* ------------------------------------------------------------------ */
+
+.dealer-audit-item-card {
+	--audit-item-accent: var(--color-brand, #f4510b);
+	--audit-item-ink: var(--color-text-primary, #08234a);
+	--audit-item-muted: var(--color-text-secondary, #64748b);
+	--audit-item-border: var(--color-border-subtle, #e7edf4);
+}
+
+.dealer-audit-item-card-content {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.dealer-audit-item-card-heading {
+	min-width: 0;
+}
+
+.dealer-audit-item-card-meta {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.dealer-audit-item-code {
+	flex-shrink: 0;
+	color: var(--audit-item-muted);
+	font-size: 0.75rem;
+	white-space: nowrap;
+}
+
+.dealer-audit-item-title {
+	margin-top: 0.5rem;
+	color: var(--audit-item-ink);
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+.dealer-audit-item-description {
+	max-width: 70rem;
+	margin-top: 0.25rem;
+	color: var(--audit-item-muted);
+	font-size: 0.875rem;
+	line-height: 1.5rem;
+	overflow-wrap: anywhere;
+}
+
+.dealer-audit-item-sections {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--audit-item-border);
+}
+
+.dealer-audit-item-section {
+	display: flex;
+	min-width: 0;
+	align-items: flex-start;
+	gap: 0.75rem;
+}
+
+.dealer-audit-item-section-icon {
+	flex-shrink: 0;
+	margin-top: 0.125rem;
+	color: var(--audit-item-accent);
+}
+
+.dealer-audit-item-section-content {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.dealer-audit-item-section-title {
+	margin: 0;
+	color: var(--audit-item-ink);
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.25rem;
+}
+
+.dealer-audit-item-section-text {
+	margin-top: 0.25rem;
+	color: var(--audit-item-muted);
+	font-size: 0.875rem;
+	line-height: 1.35rem;
+	overflow-wrap: anywhere;
+}
+
+.dealer-audit-item-criteria {
+	margin-top: 0.25rem;
+	padding-left: 1.25rem;
+	list-style: disc;
+	color: var(--audit-item-muted);
+	font-size: 0.875rem;
+	line-height: 1.35rem;
+}
+
+.dealer-audit-item-criteria li {
+	padding-left: 0.125rem;
+	overflow-wrap: anywhere;
+}
+
+/*
+ * Large screens:
+ * Keep the card full width, but use the available horizontal space
+ * for Parameter and Criteria instead of leaving a large empty area.
+ */
+@media (min-width: 1024px) {
+	.dealer-audit-item-card-content {
+		gap: 1.25rem;
+	}
+
+	.dealer-audit-item-sections {
+		flex-direction: row;
+		gap: 2rem;
+	}
+
+	.dealer-audit-item-section {
+		flex: 1 1 0;
+	}
+
+	.dealer-audit-item-section + .dealer-audit-item-section {
+		padding-left: 2rem;
+		border-left: 1px solid var(--audit-item-border);
+	}
+}
+
+/*
+ * Very small screens:
+ * Allow the badge and ID to wrap instead of squeezing or overflowing.
+ */
+@media (max-width: 420px) {
+	.dealer-audit-item-card-meta {
+		flex-wrap: wrap;
+		align-items: flex-start;
+	}
+
+	.dealer-audit-item-code {
+		margin-left: auto;
+	}
+
+	.dealer-audit-item-title {
+		font-size: 1.125rem;
+	}
+}

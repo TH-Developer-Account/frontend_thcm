@@ -12,6 +12,7 @@ import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
 import { guestSidebar } from "../modules/guest/GuestSidebar";
+import { dealerAuditSidebar } from "../modules/audit/dealerAudit/dealerAudit.sidebar";
 import Header from "../components/ui/Header";
 import { cppSidebar } from "../modules/cpp/utils/cpp.sidebar";
 
@@ -77,6 +78,9 @@ export default function MainContentWrapper() {
 			return handoutsSidebar;
 		}
 		if (path.startsWith("/cpp")) return cppSidebar;
+		if (path.startsWith("/audit/dealer")) {
+			return dealerAuditSidebar;
+		}
 
 		return [];
 	}, [location.pathname]);

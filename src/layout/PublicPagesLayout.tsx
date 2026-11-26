@@ -37,9 +37,11 @@ export const PublicPagesLayout = ({
 				) : null}
 			</header>
 
-			<main className="public-page">
-				<div className="public-page-container">
-					<section className={joinClassNames("public-page-content", className)}>
+			<main className="public-page flex flex-1">
+				<div className="public-page-container flex w-full">
+					<section
+						className={joinClassNames("public-page-content w-full", className)}
+					>
 						{children}
 					</section>
 				</div>
@@ -51,5 +53,4 @@ export const PublicPagesLayout = ({
 		</div>
 	);
 };
-
 export default PublicPagesLayout;

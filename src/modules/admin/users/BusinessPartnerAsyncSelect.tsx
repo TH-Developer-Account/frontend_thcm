@@ -3,6 +3,7 @@ import Select, { components } from "react-select";
 import type {
 	InputActionMeta,
 	InputProps as ReactSelectInputProps,
+	MultiValue,
 	SingleValue,
 } from "react-select";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -31,10 +32,8 @@ type BusinessPartnerListApiRow = {
 	officeType?: string;
 };
 
-type BusinessPartnerAsyncSelectProps = {
+type BusinessPartnerAsyncSelectBaseProps = {
 	name?: string;
-	value?: BusinessPartnerOption | null;
-	onChange: (partner: BusinessPartnerOption | null) => void;
 	placeholder?: string;
 	isClearable?: boolean;
 	isDisabled?: boolean;
@@ -44,10 +43,30 @@ type BusinessPartnerAsyncSelectProps = {
 	helperText?: string;
 	className?: string;
 	success?: boolean;
+	/** Only partners with this active flag (e.g. true = active only). Omit for all. */
+	isActive?: boolean;
+	/** Only partners of this type (e.g. "DEALER"). Omit for all. */
+	bpType?: string;
 };
 
+type BusinessPartnerSingleProps = BusinessPartnerAsyncSelectBaseProps & {
+	isMulti?: false;
+	value?: BusinessPartnerOption | null;
+	onChange: (partner: BusinessPartnerOption | null) => void;
+};
+
+type BusinessPartnerMultiProps = BusinessPartnerAsyncSelectBaseProps & {
+	isMulti: true;
+	value?: BusinessPartnerOption[];
+	onChange: (partners: BusinessPartnerOption[]) => void;
+};
+
+type BusinessPartnerAsyncSelectProps =
+	| BusinessPartnerSingleProps
+	| BusinessPartnerMultiProps;
+
 const NoAutofillInput = (
-	props: ReactSelectInputProps<BusinessPartnerOption, false>,
+	props: ReactSelectInputProps<BusinessPartnerOption, boolean>,
 ) => (
 	<components.Input
 		{...props}
@@ -59,20 +78,28 @@ const NoAutofillInput = (
 	/>
 );
 
-const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
-	name = "businessPartner",
-	value = null,
-	onChange,
-	error,
-	label,
-	helperText,
-	placeholder = "Search business partners...",
-	isClearable = true,
-	isDisabled = false,
-	required = false,
-	success,
-	className = "",
-}) => {
+const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = (
+	props,
+) => {
+	const {
+		name = "businessPartner",
+		error,
+		label,
+		helperText,
+		placeholder = "Search business partners...",
+		isClearable = true,
+		isDisabled = false,
+		required = false,
+		success,
+		className = "",
+		isActive,
+		bpType,
+	} = props;
+	const isMulti = props.isMulti === true;
+	const selectValue = props.isMulti
+		? (props.value ?? [])
+		: (props.value ?? null);
+
 	const generatedId = useId();
 	const inputId = `${name}-${generatedId}`;
 	const errorId = error ? `${inputId}-error` : undefined;
@@ -105,6 +132,8 @@ const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
 						// Keep the result list short for a searchable dropdown —
 						// this is a picker, not the full BP listing page.
 						limit: 20,
+						...(isActive !== undefined ? { isActive } : {}),
+						...(bpType ? { bpType } : {}),
 					},
 					signal: controller.signal,
 				});
@@ -141,7 +170,7 @@ const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
 			requestIsActive = false;
 			controller.abort();
 		};
-	}, [debouncedInput, isDisabled]);
+	}, [debouncedInput, isDisabled, isActive, bpType]);
 
 	const handleInputChange = (
 		nextValue: string,
@@ -162,8 +191,17 @@ const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
 		setIsLoading(true);
 	};
 
-	const handleChange = (selected: SingleValue<BusinessPartnerOption>) => {
-		onChange(selected);
+	const handleChange = (
+		selected:
+			| SingleValue<BusinessPartnerOption>
+			| MultiValue<BusinessPartnerOption>,
+	) => {
+		if (props.isMulti) {
+			// Keep the search and results so several partners can be picked in a row.
+			props.onChange([...(selected as MultiValue<BusinessPartnerOption>)]);
+			return;
+		}
+		props.onChange(selected as SingleValue<BusinessPartnerOption>);
 		setInputValue("");
 		setOptions([]);
 		setIsLoading(false);
@@ -196,10 +234,13 @@ const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
 			)}
 
 			<div className="form-input-wrapper">
-				<Select<BusinessPartnerOption, false>
+				<Select<BusinessPartnerOption, boolean>
+					isMulti={isMulti}
+					closeMenuOnSelect={!isMulti}
+					hideSelectedOptions={isMulti}
 					inputId={inputId}
 					name={name}
-					value={value}
+					value={selectValue}
 					inputValue={inputValue}
 					options={options}
 					isLoading={isLoading}
