@@ -21,17 +21,17 @@ import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import type { AuditApiAdapter } from "../../../components/ui/audit/audit.types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import {
-	artworkMockApi, // MOCK-LAYER
-	isArtworkMockEnabled, // MOCK-LAYER
-	useArtworkMockMode, // MOCK-LAYER
+  artworkMockApi, // MOCK-LAYER
+  isArtworkMockEnabled, // MOCK-LAYER
+  useArtworkMockMode, // MOCK-LAYER
 } from "./artworks.mock";
 import type {
-	ArtworkDetail,
-	ArtworkListParams,
-	ArtworkListResponse,
-	RemindInput,
-	RequestEditInput,
-	ShareLinkInput,
+  ArtworkDetail,
+  ArtworkListParams,
+  ArtworkListResponse,
+  RemindInput,
+  RequestEditInput,
+  ShareLinkInput,
 } from "./artworks.types";
 
 /* ========================================================================== */
@@ -39,59 +39,59 @@ import type {
 /* ========================================================================== */
 
 const realApi = {
-	list: async (params: ArtworkListParams): Promise<ArtworkListResponse> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get("/artworks", { params });
-		return data;
-	},
+  list: async (params: ArtworkListParams): Promise<ArtworkListResponse> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get("/artworks", { params });
+    return data;
+  },
 
-	get: async (id: string): Promise<ArtworkDetail> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`/artworks/${id}`);
-		return data;
-	},
+  get: async (id: string): Promise<ArtworkDetail> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get(`/artworks/${id}`);
+    return data;
+  },
 
-	/** Null when the EPC has no artwork request (nothing was asked for). */
-	getByEpc: async (epcId: string): Promise<ArtworkDetail | null> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`/artworks/by-epc/${epcId}`);
-		return data ?? null;
-	},
+  /** Null when the EPC has no artwork request (nothing was asked for). */
+  getByEpc: async (epcId: string): Promise<ArtworkDetail | null> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get(`/artworks/by-epc/${epcId}`);
+    return data ?? null;
+  },
 
-	shareLinks: async (
-		id: string,
-		links: ShareLinkInput[],
-	): Promise<{ id: string; status: string }> => {
-		const {
-			data: { data },
-		} = await ServerAxios.put(`/artworks/${id}/links`, { links });
-		return data;
-	},
+  shareLinks: async (
+    id: string,
+    links: ShareLinkInput[],
+  ): Promise<{ id: string; status: string }> => {
+    const {
+      data: { data },
+    } = await ServerAxios.put(`/artworks/${id}/links`, { links });
+    return data;
+  },
 
-	/** Proposer asks for changes on ONE shared link. Backend emails the team. */
-	requestEdit: async (
-		id: string,
-		itemId: string,
-		note: string,
-	): Promise<{ id: string; status: string }> => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`/artworks/${id}/items/${itemId}/request-edit`, {
-			note,
-		});
-		return data;
-	},
+  /** Proposer asks for changes on ONE shared link. Backend emails the team. */
+  requestEdit: async (
+    id: string,
+    itemId: string,
+    note: string,
+  ): Promise<{ id: string; status: string }> => {
+    const {
+      data: { data },
+    } = await ServerAxios.post(`/artworks/${id}/items/${itemId}/request-edit`, {
+      note,
+    });
+    return data;
+  },
 
-	/** Nudge the team about an item still waiting for a link. */
-	remind: async (id: string, itemId: string): Promise<{ id: string }> => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`/artworks/${id}/items/${itemId}/remind`);
-		return data;
-	},
+  /** Nudge the team about an item still waiting for a link. */
+  remind: async (id: string, itemId: string): Promise<{ id: string }> => {
+    const {
+      data: { data },
+    } = await ServerAxios.post(`/artworks/${id}/items/${itemId}/remind`);
+    return data;
+  },
 };
 
 // MOCK-LAYER: picked per call so the checkbox takes effect immediately.
@@ -100,22 +100,23 @@ const realApi = {
 const activeApi = () => (isArtworkMockEnabled() ? artworkMockApi : realApi);
 
 export const artworkApi: typeof realApi = {
-	list: (params) => activeApi().list(params),
-	get: (id) => activeApi().get(id),
-	getByEpc: (epcId) => activeApi().getByEpc(epcId),
-	shareLinks: (id, links) => activeApi().shareLinks(id, links),
-	// MOCK-LAYER: artworkMockApi must implement these two too (see note in the
-	// hand-off); until it does, mock mode fails loudly instead of silently.
-	requestEdit: (id, itemId, note) => {
-		const api = activeApi() as Partial<typeof realApi>;
-		if (!api.requestEdit) throw new Error("Mock API: requestEdit not implemented");
-		return api.requestEdit(id, itemId, note);
-	},
-	remind: (id, itemId) => {
-		const api = activeApi() as Partial<typeof realApi>;
-		if (!api.remind) throw new Error("Mock API: remind not implemented");
-		return api.remind(id, itemId);
-	},
+  list: (params) => activeApi().list(params),
+  get: (id) => activeApi().get(id),
+  getByEpc: (epcId) => activeApi().getByEpc(epcId),
+  shareLinks: (id, links) => activeApi().shareLinks(id, links),
+  // MOCK-LAYER: artworkMockApi must implement these two too (see note in the
+  // hand-off); until it does, mock mode fails loudly instead of silently.
+  requestEdit: (id, itemId, note) => {
+    const api = activeApi() as Partial<typeof realApi>;
+    if (!api.requestEdit)
+      throw new Error("Mock API: requestEdit not implemented");
+    return api.requestEdit(id, itemId, note);
+  },
+  remind: (id, itemId) => {
+    const api = activeApi() as Partial<typeof realApi>;
+    if (!api.remind) throw new Error("Mock API: remind not implemented");
+    return api.remind(id, itemId);
+  },
 };
 
 /* ========================================================================== */
@@ -128,13 +129,13 @@ export const artworkApi: typeof realApi = {
 const modeTag = () => (isArtworkMockEnabled() ? "mock" : "live");
 
 export const artworkKeys = {
-	all: ["artworks"] as const,
-	list: (params: ArtworkListParams) =>
-		[...artworkKeys.all, modeTag(), "list", params] as const,
-	detail: (id: string) =>
-		[...artworkKeys.all, modeTag(), "detail", id] as const,
-	byEpc: (epcId: string) =>
-		[...artworkKeys.all, modeTag(), "by-epc", epcId] as const,
+  all: ["artworks"] as const,
+  list: (params: ArtworkListParams) =>
+    [...artworkKeys.all, modeTag(), "list", params] as const,
+  detail: (id: string) =>
+    [...artworkKeys.all, modeTag(), "detail", id] as const,
+  byEpc: (epcId: string) =>
+    [...artworkKeys.all, modeTag(), "by-epc", epcId] as const,
 };
 
 /* ========================================================================== */
@@ -142,23 +143,23 @@ export const artworkKeys = {
 /* ========================================================================== */
 
 export function useArtworksQuery(params: ArtworkListParams, enabled = true) {
-	useArtworkMockMode(); // MOCK-LAYER: re-render (and re-key) when the checkbox flips
-	return useQuery({
-		queryKey: artworkKeys.list(params),
-		queryFn: () => artworkApi.list(params),
-		enabled,
-		// Keep the old page on screen while the next one loads (no table flash).
-		placeholderData: keepPreviousData,
-	});
+  useArtworkMockMode(); // MOCK-LAYER: re-render (and re-key) when the checkbox flips
+  return useQuery({
+    queryKey: artworkKeys.list(params),
+    queryFn: () => artworkApi.list(params),
+    enabled,
+    // Keep the old page on screen while the next one loads (no table flash).
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useArtworkQuery(id: string | undefined) {
-	useArtworkMockMode(); // MOCK-LAYER
-	return useQuery({
-		queryKey: artworkKeys.detail(id ?? ""),
-		queryFn: () => artworkApi.get(id as string),
-		enabled: Boolean(id),
-	});
+  useArtworkMockMode(); // MOCK-LAYER
+  return useQuery({
+    queryKey: artworkKeys.detail(id ?? ""),
+    queryFn: () => artworkApi.get(id as string),
+    enabled: Boolean(id),
+  });
 }
 
 /**
@@ -167,37 +168,37 @@ export function useArtworkQuery(id: string | undefined) {
  * than an error on someone else's EPC.
  */
 export function useArtworkByEpcQuery(
-	epcId: string | undefined,
-	enabled = true,
+  epcId: string | undefined,
+  enabled = true,
 ) {
-	useArtworkMockMode(); // MOCK-LAYER
-	return useQuery({
-		queryKey: artworkKeys.byEpc(epcId ?? ""),
-		queryFn: () => artworkApi.getByEpc(epcId as string),
-		enabled: enabled && Boolean(epcId),
-		retry: false,
-		staleTime: 30 * 1000,
-	});
+  useArtworkMockMode(); // MOCK-LAYER
+  return useQuery({
+    queryKey: artworkKeys.byEpc(epcId ?? ""),
+    queryFn: () => artworkApi.getByEpc(epcId as string),
+    enabled: enabled && Boolean(epcId),
+    retry: false,
+    staleTime: 30 * 1000,
+  });
 }
 
 export function useShareArtworkLinksMutation() {
-	return useMutation({
-		mutationFn: ({ id, links }: { id: string; links: ShareLinkInput[] }) =>
-			artworkApi.shareLinks(id, links),
-	});
+  return useMutation({
+    mutationFn: ({ id, links }: { id: string; links: ShareLinkInput[] }) =>
+      artworkApi.shareLinks(id, links),
+  });
 }
 
 export function useRequestArtworkEditMutation() {
-	return useMutation({
-		mutationFn: ({ id, itemId, note }: RequestEditInput) =>
-			artworkApi.requestEdit(id, itemId, note),
-	});
+  return useMutation({
+    mutationFn: ({ id, itemId, note }: RequestEditInput) =>
+      artworkApi.requestEdit(id, itemId, note),
+  });
 }
 
 export function useRemindArtworkTeamMutation() {
-	return useMutation({
-		mutationFn: ({ id, itemId }: RemindInput) => artworkApi.remind(id, itemId),
-	});
+  return useMutation({
+    mutationFn: ({ id, itemId }: RemindInput) => artworkApi.remind(id, itemId),
+  });
 }
 
 /* ========================================================================== */
@@ -211,36 +212,36 @@ export function useRemindArtworkTeamMutation() {
 export const ARTWORK_AUDIT_SUBJECT = "ARTWORK_REQUEST";
 
 export const artworkAuditApi: AuditApiAdapter = {
-	getAuditLog: async ({ subjectId }) => {
-		const request = await artworkApi.get(subjectId);
+  getAuditLog: async ({ subjectId }) => {
+    const request = await artworkApi.get(subjectId);
 
-		return request.timeline.map((entry) => {
-			const [first = "", ...rest] = entry.byName.trim().split(/\s+/);
-			const items = entry.metadata?.items;
-			return {
-				id: entry.id,
-				action: entry.action,
-				// The artwork names show as the entry's detail line.
-				metadata:
-					Array.isArray(items) && items.length > 0
-						? { reason: items.join(", ") }
-						: null,
-				actor: { id: entry.id, first_name: first, last_name: rest.join(" ") },
-				createdAt: entry.at,
-			};
-		});
-	},
+    return request.timeline.map((entry) => {
+      const [first = "", ...rest] = entry.byName.trim().split(/\s+/);
+      const items = entry.metadata?.items;
+      return {
+        id: entry.id,
+        action: entry.action,
+        // The artwork names show as the entry's detail line.
+        metadata:
+          Array.isArray(items) && items.length > 0
+            ? { reason: items.join(", ") }
+            : null,
+        actor: { id: entry.id, first_name: first, last_name: rest.join(" ") },
+        createdAt: entry.at,
+      };
+    });
+  },
 };
 
 /** Wording for the actions the shared audit messages don't know. */
 export const ARTWORK_AUDIT_MESSAGES = {
-	REQUEST_CREATED: "received the artwork request from the approved CRF",
-	REQUEST_UPDATED:
-		"updated the artwork list after the event was approved again",
-	LINKS_SHARED: "shared artwork links",
-	LINKS_CLEARED: "removed artwork links",
-	COMPLETED: "shared every artwork link",
-	REMINDER_SENT: "sent a reminder to the marketing team",
-	EDIT_REQUESTED: "requested changes to an artwork",
-	LINK_UPDATED: "shared an updated artwork link",
+  REQUEST_CREATED: "received the artwork request from the approved CRF",
+  REQUEST_UPDATED:
+    "updated the artwork list after the event was approved again",
+  LINKS_SHARED: "shared artwork links",
+  LINKS_CLEARED: "removed artwork links",
+  COMPLETED: "shared every artwork link",
+  REMINDER_SENT: "sent a reminder to the marketing team",
+  EDIT_REQUESTED: "requested changes to an artwork",
+  LINK_UPDATED: "shared an updated artwork link",
 } as const;
