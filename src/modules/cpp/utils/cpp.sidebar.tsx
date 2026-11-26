@@ -4,7 +4,7 @@ import type { SidebarItem } from "../../../layout/layout.types";
 export const cppSidebar: SidebarItem[] = [
 	{
 		id: "cpp-listing",
-		label: "Listing",
+		label: "Dashboard",
 		icon: <Table size={18} />,
 		link: "/cpp/listing",
 	},

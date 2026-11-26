@@ -135,14 +135,10 @@ export const getCppListingColumns = ({
 		{
 			accessorKey: "amount",
 			header: "Amount",
+			meta: { headerClassName: "text-right", cellClassName: "text-right" },
 			cell: ({ row }) => (
-				<span title={row.original.amountLabel}>
+				<span className="tabular-nums" title={row.original.amountLabel}>
 					{formatCurrency(row.original.amount)}
-					{row.original.amount !== null ? (
-						<span className="ml-1 text-xs text-slate-400">
-							{/* {row.original.amountLabel} */}
-						</span>
-					) : null}
 				</span>
 			),
 		},

@@ -7,6 +7,9 @@
 // Layout is compact: the attribute boxes (models, plants, price type, pricing
 // condition, For Plants / For Spares) run in one row, so the justification and
 // material cost tracker no longer sit next to a tall empty column.
+//
+// The exported PDF (backend cppAssembler.ts / cppDocDefinition.ts) reads the same
+// saved values and uses the same Checked / Recommended / Approved By rules.
 import type { ReactNode } from "react";
 
 import type { CppFormValues, CppPartRow } from "../types/cpp.types";
@@ -46,6 +49,16 @@ const CHECKLIST_ROWS = [
 	{ key: "nesting", label: "6) Nesting Calculation" },
 	{ key: "comparativeQuote", label: "7) Comparative Quote./Ana." },
 ] as const;
+
+/**
+ * Stage-name rules (stage names are "<label> · <title>", see cpp.workflow.ts).
+ * Approved By = every Approver stage that is not the committee, a chairman or the MD;
+ * those have their own boxes. Same rules as the backend PDF (bucketForStage).
+ */
+const CHECKED_BY = /^checker/i;
+const RECOMMENDED_BY = /^recommender/i;
+const APPROVED_BY =
+	/^approver(?!.*(committee|chairman|managing director|\(md\)|\bmd\b))/i;
 
 type PdfApprover = {
 	first_name?: string | null;
@@ -145,16 +158,16 @@ const CppPdfView = ({
 	const sheetRows: PdfPartRow[] = summaryParts
 		.slice(0, MAX_SHEET_PARTS)
 		.map((part) => ({
-		partNo: part.partNo,
-		description: part.description,
-		uom: part.uom,
-		existingRate: part.existingPrice,
-		existingWef: "",
-		quotedRate: "",
-		quotedWef: "",
-		finalRate: part.newPrice,
-		finalWef: part.effectiveDate,
-	}));
+			partNo: part.partNo,
+			description: part.description,
+			uom: part.uom,
+			existingRate: part.existingPrice,
+			existingWef: "",
+			quotedRate: "",
+			quotedWef: "",
+			finalRate: part.newPrice,
+			finalWef: part.effectiveDate,
+		}));
 	// Older requests typed their parts by hand; use them when there is no sheet.
 	const parts: PdfPartRow[] = sheetRows.length
 		? sheetRows
@@ -182,9 +195,9 @@ const CppPdfView = ({
 		(row) => row && (row.plant || row.partNumber || row.price),
 	);
 
-	const checkedBy = approversFor(stages, /^checker/i);
-	const recommendedBy = approversFor(stages, /^recommender/i);
-	const approvedBy = approversFor(stages, /^approver-[123]/i);
+	const checkedBy = approversFor(stages, CHECKED_BY);
+	const recommendedBy = approversFor(stages, RECOMMENDED_BY);
+	const approvedBy = approversFor(stages, APPROVED_BY);
 	const committee = approversFor(stages, /committee/i);
 	// No authority is typed on the form: the last approval stage is the authority.
 	const lastStage = [...stages]
@@ -410,16 +423,14 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{(perMachine.length ? perMachine : [null]).map(
-								(row, index) => (
-									<tr key={index}>
-										<td>{text(row?.plant)}</td>
-										<td>{text(row?.model)}</td>
-										<td>{amount(row?.withAmort)}</td>
-										<td>{amount(row?.withoutAmort)}</td>
-									</tr>
-								),
-							)}
+							{(perMachine.length ? perMachine : [null]).map((row, index) => (
+								<tr key={index}>
+									<td>{text(row?.plant)}</td>
+									<td>{text(row?.model)}</td>
+									<td>{amount(row?.withAmort)}</td>
+									<td>{amount(row?.withoutAmort)}</td>
+								</tr>
+							))}
 						</tbody>
 					</table>
 				</Box>
@@ -481,15 +492,13 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{(plantPrices.length ? plantPrices : [null]).map(
-								(row, index) => (
-									<tr key={index}>
-										<td>{text(row?.plant)}</td>
-										<td>{text(row?.partNumber)}</td>
-										<td>{amount(row?.price)}</td>
-									</tr>
-								),
-							)}
+							{(plantPrices.length ? plantPrices : [null]).map((row, index) => (
+								<tr key={index}>
+									<td>{text(row?.plant)}</td>
+									<td>{text(row?.partNumber)}</td>
+									<td>{amount(row?.price)}</td>
+								</tr>
+							))}
 						</tbody>
 					</table>
 				</Box>
@@ -579,18 +588,16 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{(costTracker.length ? costTracker : [null]).map(
-								(row, index) => (
-									<tr key={index}>
-										<td>{text(row?.model)}</td>
-										<td>{text(row?.perMachineImpact)}</td>
-										<td>{text(row?.budgetedIncrease)}</td>
-										<td>{text(row?.statusYtd)}</td>
-										<td>{text(row?.budgetedMaterialCost)}</td>
-										<td>{amount(row?.materialCostYtd)}</td>
-									</tr>
-								),
-							)}
+							{(costTracker.length ? costTracker : [null]).map((row, index) => (
+								<tr key={index}>
+									<td>{text(row?.model)}</td>
+									<td>{text(row?.perMachineImpact)}</td>
+									<td>{text(row?.budgetedIncrease)}</td>
+									<td>{text(row?.statusYtd)}</td>
+									<td>{text(row?.budgetedMaterialCost)}</td>
+									<td>{amount(row?.materialCostYtd)}</td>
+								</tr>
+							))}
 						</tbody>
 					</table>
 				</Box>
@@ -620,9 +627,7 @@ const CppPdfView = ({
 				</Box>
 
 				<Box caption="Approving Authority" className="cpp-pdf-authority">
-					<div className="cpp-pdf-value">
-						{text(authority)}
-					</div>
+					<div className="cpp-pdf-value">{text(authority)}</div>
 					<div className="cpp-pdf-sign-grid cpp-pdf-sign-grid-wide">
 						<div>
 							<div className="cpp-pdf-sign-label">CPP committee</div>

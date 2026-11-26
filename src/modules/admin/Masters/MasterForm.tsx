@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 
+import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 
 import {
@@ -114,25 +115,29 @@ export const MasterForm = ({
 			</div>
 
 			<footer className="mh-form-actions">
-				<button
+				<Button
 					type="submit"
-					className="mh-btn mh-btn--brand"
+					text={
+						isSaving
+							? "Saving…"
+							: isNew
+								? `Create ${def.singular}`
+								: "Save changes"
+					}
+					appearance="standard"
+					variant="brand"
+					size="sm"
 					disabled={isSaving}
-				>
-					{isSaving
-						? "Saving…"
-						: isNew
-							? `Create ${def.singular}`
-							: "Save changes"}
-				</button>
-				<button
+				/>
+				<Button
 					type="button"
-					className="mh-btn"
+					text="Cancel"
+					appearance="standard"
+					variant="outline"
+					size="sm"
 					disabled={isSaving}
 					onClick={onClose}
-				>
-					Cancel
-				</button>
+				/>
 			</footer>
 		</form>
 	);

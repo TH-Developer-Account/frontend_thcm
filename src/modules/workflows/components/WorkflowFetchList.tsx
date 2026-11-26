@@ -5,7 +5,6 @@ import {
 	ChevronDown,
 	ChevronUp,
 	GitFork,
-	Paperclip,
 	Plus,
 	Users,
 } from "lucide-react";

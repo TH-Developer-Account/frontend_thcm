@@ -10,6 +10,11 @@ export type ApprovalWorkflowTableContentProps = {
 	stages: ApprovalStageLike[];
 	additionalFlows?: ApprovalWorkflowFlowGroup[];
 	showEmptyState?: boolean;
+	/**
+	 * The workflow's current stage order (activeWorkflow.currentStage).
+	 * The matching stage of the current iteration is highlighted in the table.
+	 */
+	currentStageOrder?: number | null;
 };
 
 export type ApprovalWorkflowFlowGroup = {
@@ -23,6 +28,7 @@ export const ApprovalWorkflowTableContent = ({
 	stages,
 	additionalFlows = [],
 	showEmptyState = true,
+	currentStageOrder,
 }: ApprovalWorkflowTableContentProps) => {
 	const approvalRows = useMemo(
 		() =>
@@ -31,6 +37,19 @@ export const ApprovalWorkflowTableContent = ({
 			}),
 		[stages],
 	);
+
+	// Row id of the stage the workflow is at (ignores stages of older iterations).
+	const currentStageId = useMemo(() => {
+		if (currentStageOrder === null || currentStageOrder === undefined) {
+			return null;
+		}
+		const stage = stages.find(
+			(item) =>
+				item.isCurrentIteration !== false &&
+				Number(item.stageOrder) === Number(currentStageOrder),
+		);
+		return stage ? (stage.id ?? String(stage.stageOrder)) : null;
+	}, [stages, currentStageOrder]);
 
 	const additionalFlowRows = useMemo(
 		() =>
@@ -62,7 +81,9 @@ export const ApprovalWorkflowTableContent = ({
 
 	return (
 		<div className="approval-workflow-content">
-			{hasApprovalFlow ? <ApprovalTable data={approvalRows} /> : null}
+			{hasApprovalFlow ? (
+				<ApprovalTable data={approvalRows} currentStageId={currentStageId} />
+			) : null}
 
 			{visibleAdditionalFlows.map((flow) => (
 				<ApprovalTable

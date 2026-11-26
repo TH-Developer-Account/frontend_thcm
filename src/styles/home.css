@@ -392,6 +392,12 @@
 
 	/* Hero artwork: transparency already fades the left and bottom edges.
 	   Keep the image's intrinsic proportions; no cover, zoom or extra mask. */
+	/* The image always fills the hero's full height and is anchored
+	   bottom-right. When the slot is narrower than the artwork, the slot
+	   crops its LEFT side (overflow: hidden) instead of shrinking it.
+	   (max-width: 100% used to shrink it, which exposed the artwork's own
+	   top and left edges as a hard rectangle at tablet/laptop widths.)
+	   The left-edge fade hides the crop line. */
 	.home-hero-media {
 		position: absolute;
 		inset: 0 0 0 auto;
@@ -399,8 +405,14 @@
 		width: 55%;
 		pointer-events: none;
 		overflow: hidden;
-		mask-image: none;
-		-webkit-mask-image: none;
+
+		--home-hero-fade: linear-gradient(
+			to right,
+			transparent 0%,
+			var(--color-machine-black) 30%
+		);
+		mask-image: var(--home-hero-fade);
+		-webkit-mask-image: var(--home-hero-fade);
 	}
 
 	.home-hero-media img {
@@ -410,11 +422,8 @@
 		display: block;
 		width: auto;
 		height: 100%;
-		max-width: 100%;
-		object-fit: contain;
-		object-position: right bottom;
-		mask-image: none;
-		-webkit-mask-image: none;
+		max-width: none;
+		max-height: none;
 	}
 
 	/* ---------- Module grid ---------- */
@@ -730,23 +739,16 @@
 		}
 
 		.home-hero-media {
-			width: 42%;
-			opacity: 0.85;
+			width: 45%;
 		}
 	}
 
 	@media (max-width: 767px) {
-		.home-layout {
-			height: auto;
-			min-height: 100dvh;
-			overflow: visible;
-		}
-
-		.home-layout-main {
-			min-height: 0;
-			flex: 1 0 auto;
-			overflow: visible;
-		}
+		/* No mobile override of .home-layout / .home-layout-main: they keep
+		   100dvh + their own scroll at every size. They used to switch to
+		   document scrolling here, but layout.css sets html/body/#root to
+		   overflow: hidden below 768px for the app shell, so the home page
+		   could not scroll at all on phones and narrow windows. */
 
 		.home-module-grid {
 			grid-template-columns: 1fr;

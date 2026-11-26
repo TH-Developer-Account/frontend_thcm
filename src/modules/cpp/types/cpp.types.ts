@@ -234,6 +234,9 @@ export type CppFormValues = {
 		amount: string;
 		partValuePart: string;
 		amountPart: string;
+		/** Approval-matrix range keys (utils/cpp.bands.ts), e.g. "1000000_20000000". */
+		partBand: string;
+		amountBand: string;
 	};
 
 	/** Summary sheet rows read by the server. Read-only; never sent in a save. */
@@ -450,6 +453,8 @@ export type CppMatrixRole = {
 	scopes: CppSlotScope[];
 	assignable: boolean;
 	observer: boolean;
+	/** Gets the approved-request mail (TCS). Not an approval stage. */
+	recipient?: boolean;
 	note: string | null;
 	/** How many of the 71 workflow bands use this role. */
 	usedByBands: number;
@@ -474,6 +479,14 @@ export type CppApprovalMatrix = {
 	coverage: CppCoverageIssue[];
 	updatedAt: string | null;
 };
+
+/**
+ * Result of the workflow-template refresh after a matrix save / replace / sync
+ * (cpp.template.sync.ts). The `error` shape is used when the refresh itself failed.
+ */
+export type CppTemplateSyncResult =
+	| { created: number; updated: number; notReady: number; errors: string[] }
+	| { error: string };
 
 export type CppMatrixSlotUpdate = {
 	roleKey: string;
@@ -507,4 +520,9 @@ export type CppChain = {
 	wf1: CppChainStep[];
 	wf2: CppChainStep[];
 	priceFeeding: { roleKey: string; implied: boolean };
+};
+export type CppMatrixMutationResult = {
+	matrix: CppApprovalMatrix;
+	templates: CppTemplateSyncResult | null;
+	message?: string;
 };

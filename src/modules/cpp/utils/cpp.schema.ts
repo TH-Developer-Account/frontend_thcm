@@ -54,7 +54,10 @@ export const collectCppIssues = (values: CppFormValues): CppIssue[] => {
 		!blank(values.category) &&
 		!isConditionAllowed(values.condition, values.category)
 	)
-		add(["condition"], "This condition does not apply to the selected category");
+		add(
+			["condition"],
+			"This condition does not apply to the selected category",
+		);
 	if (!values.materialType) add(["materialType"], "Select Direct or Indirect");
 	if (blank(values.reason)) add(["reason"], "Select a reason");
 	if (blank(values.priceType)) add(["priceType"], "Select a price type");
@@ -79,22 +82,10 @@ export const collectCppIssues = (values: CppFormValues): CppIssue[] => {
 	const condition = getCondition(values.condition);
 	if (condition) {
 		const approval = values.approvalValues;
-		const hasParts = (values.summaryParts ?? []).length > 0;
-		const message = "Enter a value greater than 0";
-
-		if (condition.partBasis === "PART_VALUE") {
-			if (hasParts && blank(approval.partValuePart))
-				add(["approvalValues", "partValuePart"], "Select the part");
-			else if (!positive(approval.partValue))
-				add(["approvalValues", "partValue"], message);
-		}
-		if (condition.partBasis === "VARIATION_PCT" && !positive(approval.variationPct))
-			add(["approvalValues", "variationPct"], message);
-
-		if (hasParts && blank(approval.amountPart))
-			add(["approvalValues", "amountPart"], "Select the part");
-		else if (!positive(approval.amount))
-			add(["approvalValues", "amount"], message);
+		if (condition.partBasis && blank(approval.partBand))
+			add(["approvalValues", "partBand"], "Select a range");
+		if (blank(approval.amountBand))
+			add(["approvalValues", "amountBand"], "Select a range");
 	}
 
 	/* ------------------------- amortisation (PB50 only) ----------------------- */
@@ -109,14 +100,18 @@ export const collectCppIssues = (values: CppFormValues): CppIssue[] => {
 			if (!positive(row.priceInclAmort))
 				at("priceInclAmort", "Enter a price greater than 0");
 			if (blank(row.cutoffDate)) at("cutoffDate", "Enter the cut-off date");
-			if (!positive(row.amortQty)) at("amortQty", "Enter a quantity greater than 0");
+			if (!positive(row.amortQty))
+				at("amortQty", "Enter a quantity greater than 0");
 			if (blank(row.priceAfterAmort) || !isNumberText(row.priceAfterAmort))
 				at("priceAfterAmort", "Enter the price after amortisation");
 			else if (
 				positive(row.priceInclAmort) &&
 				(toNum(row.priceAfterAmort) ?? 0) >= (toNum(row.priceInclAmort) ?? 0)
 			)
-				at("priceAfterAmort", "Must be lower than the price incl. amortisation");
+				at(
+					"priceAfterAmort",
+					"Must be lower than the price incl. amortisation",
+				);
 		});
 	}
 
@@ -167,7 +162,10 @@ export const collectCppIssues = (values: CppFormValues): CppIssue[] => {
 					"Enter the purchasing group",
 				);
 			if (blank(row.taxCode))
-				add(["masterData", "plantDetails", index, "taxCode"], "Select the tax code");
+				add(
+					["masterData", "plantDetails", index, "taxCode"],
+					"Select the tax code",
+				);
 			if (!optionalNumberOk(row.pfPct))
 				add(["masterData", "plantDetails", index, "pfPct"], "Enter a number");
 		});
@@ -202,7 +200,11 @@ export const cppSchema = z
 	.custom<CppFormValues>(() => true)
 	.superRefine((values, ctx) => {
 		for (const issue of collectCppIssues(values))
-			ctx.addIssue({ code: "custom", path: issue.path, message: issue.message });
+			ctx.addIssue({
+				code: "custom",
+				path: issue.path,
+				message: issue.message,
+			});
 	});
 
 export type CppSchemaValues = CppFormValues;

@@ -7,7 +7,7 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import ReimbursementClaimForm from "../../medicalReimbursment/components/ReimbursementClaimForm";
 
-import { useGuestMedicalClaimView } from "./useGuestReimbursementClaimAccess";
+import { useGuestMedicalClaimView } from "./useGuestMedicalClaimView";
 import { MEDICLAIM_BACKEND } from "../../medicalReimbursment/utils/mediclaimBackend.config";
 
 const GuestReimbursementPage = () => {
@@ -109,7 +109,7 @@ const GuestReimbursementPage = () => {
 				correctionReason={guestClaim.correctionReason}
 				actionText={isCreateMode ? "Submit Claim" : "Resubmit Claim"}
 				statusBanner={guestClaim.statusBanner ?? undefined}
-				showAlertBanner={guestClaim.showAlertBanner}
+				showAlertBanner
 				onBack={() => navigate("/guest/medi-claim/listing")}
 			/>
 		</PageSectionLayout>

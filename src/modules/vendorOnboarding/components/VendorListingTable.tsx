@@ -138,6 +138,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 					/>
 				) : undefined
 			}
+			headerClassName="border-none pb-3"
 			actions={
 				<>
 					<SearchInput

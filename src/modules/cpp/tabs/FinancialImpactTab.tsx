@@ -52,10 +52,10 @@ const Tile = ({
 	value: string;
 	hint: string;
 }) => (
-	<div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-		<div className="text-xs text-slate-600">{title}</div>
-		<div className="mt-1 text-xl font-semibold">{value}</div>
-		<div className="text-xs text-slate-500">{hint}</div>
+	<div className="rounded-md border border-line bg-white px-3 py-2">
+		<div className="text-xs text-fg-muted">{title}</div>
+		<div className="mt-1 text-xl font-semibold tabular-nums text-fg">{value}</div>
+		<div className="text-xs text-fg-muted">{hint}</div>
 	</div>
 );
 
@@ -92,10 +92,10 @@ const FinancialImpactTab = () => {
 				title="Financial impact by plant"
 				subtitle="As in the Financial Impact box of the attached Excel."
 			>
-				<div className="overflow-x-auto rounded-md border border-slate-200 scrollbar-sleek">
+				<div className="overflow-x-auto rounded-md border border-line scrollbar-sleek">
 					<table className="w-full min-w-[720px] text-sm">
-						<thead className="bg-slate-50 text-xs font-semibold text-slate-700">
-							<tr className="border-b border-slate-200">
+						<thead className="bg-surface-readonly text-xs font-semibold text-fg">
+							<tr className="border-b border-line">
 								<th rowSpan={2} className="px-3 py-2 text-left align-bottom">
 									Plant
 								</th>
@@ -115,7 +115,7 @@ const FinancialImpactTab = () => {
 						</thead>
 						<tbody>
 							{FINANCIAL_PLANTS.map((plant) => (
-								<tr key={plant} className="border-t border-slate-200">
+								<tr key={plant} className="border-t border-line">
 									<td className="px-3 py-2 font-medium">{plant}</td>
 									{readOnly ? (
 										<>
@@ -172,7 +172,7 @@ const FinancialImpactTab = () => {
 									)}
 								</tr>
 							))}
-							<tr className="border-t-2 border-slate-300 bg-slate-50 font-semibold">
+							<tr className="border-t-2 border-line bg-surface-readonly font-semibold">
 								<td className="px-3 py-2">Total</td>
 								<td className="px-3 py-2 text-right">{inr.format(actual)}</td>
 								{readOnly ? (
@@ -212,7 +212,7 @@ const FinancialImpactTab = () => {
 						</tbody>
 					</table>
 				</div>
-				<p className="text-xs text-slate-500">
+				<p className="text-xs text-fg-muted">
 					(+ve. → Price Increase, −ve. → Price Decrease)
 				</p>
 			</CppSection>

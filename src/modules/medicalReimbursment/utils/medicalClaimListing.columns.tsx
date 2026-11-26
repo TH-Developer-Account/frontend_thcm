@@ -70,7 +70,12 @@ export const getMedicalClaimListingColumns = ({
 			{
 				accessorKey: "totalClaimed",
 				header: "Claimed Amount",
-				cell: ({ row }) => currencyFormatter.format(row.original.totalClaimed),
+				meta: { headerClassName: "text-right", cellClassName: "text-right" },
+				cell: ({ row }) => (
+					<span className="tabular-nums">
+						{currencyFormatter.format(row.original.totalClaimed)}
+					</span>
+				),
 			},
 			{
 				accessorKey: "pendingOn",

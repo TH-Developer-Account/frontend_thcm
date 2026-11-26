@@ -18,7 +18,7 @@ import { canDownload, downloadCppFile } from "../utils/cpp.files";
 import { useCppReadOnly, useFieldError } from "./CppFields";
 import { Download } from "lucide-react";
 
-const TEMPLATE_FILE_NAME = "CPP-summary-sheet-template.xlsx";
+const TEMPLATE_FILE_NAME = "CPP_price-changes_template.xlsx";
 
 /** Column groups of the summary sheet (Price Revision Data layout). Order matters. */
 const FORMAT_GROUPS: { group: string; columns: string[] }[] = [
@@ -103,7 +103,8 @@ const PartSummaryModal = ({
 	// Only a saved sheet has a row count; a file picked but not yet saved does not.
 	const rowCount =
 		current && !current.isLocal ? current.partRowCount : undefined;
-	const savedFile = current && !current.isLocal && canDownload(current) ? current : null;
+	const savedFile =
+		current && !current.isLocal && canDownload(current) ? current : null;
 	const downloadSaved = savedFile ? (
 		<Button
 			type="button"
@@ -158,18 +159,14 @@ const PartSummaryModal = ({
 			ariaLabel="Summary sheet format and upload"
 		>
 			<div className="flex flex-col gap-4">
-				<div
-					role="note"
-					className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900"
-				>
-					<p className="font-semibold">
-						Fill the summary sheet in the expected format.
-					</p>
-					<p>
-						The file is formatted: do not add or remove columns. Keep the header
-						and sub-header rows, and fill only the data rows below them.
-					</p>
-					<div className="mt-2">
+				<Alert
+					type="banner"
+					variant="info"
+					title="Fill the summary sheet in the expected format."
+					description="The file is formatted: do not add or remove columns. Keep the header and sub-header rows, and fill only the data rows below them."
+				/>
+				<div>
+					<div>
 						<Button
 							type="button"
 							text={downloading ? "Downloading..." : "Download blank template"}
@@ -183,20 +180,22 @@ const PartSummaryModal = ({
 				</div>
 
 				{readOnly ? null : (
-					<div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-						<strong>This field is mandatory.</strong> Upload the summary sheet
-						before you submit the request.
-					</div>
+					<Alert
+						type="banner"
+						variant="warning"
+						title="This field is mandatory."
+						description="Upload the summary sheet before you submit the request."
+					/>
 				)}
 
 				{error && !readOnly ? (
 					<Alert variant="error" title="Summary sheet" description={error} />
 				) : null}
 
-				<div className="overflow-x-auto rounded-md border border-slate-200 scrollbar-sleek">
+				<div className="overflow-x-auto rounded-md border border-line scrollbar-sleek">
 					<table className="w-full min-w-[1100px] text-xs">
-						<thead className="bg-slate-50 font-semibold text-slate-700">
-							<tr className="border-b border-slate-200">
+						<thead className="bg-surface-readonly font-semibold text-fg">
+							<tr className="border-b border-line">
 								{FORMAT_GROUPS.map((group) => (
 									<th
 										key={group.group}
@@ -240,7 +239,7 @@ const PartSummaryModal = ({
 							<p>No summary sheet was uploaded.</p>
 						)}
 						{rowCountText ? (
-							<p className="text-slate-600">{rowCountText}</p>
+							<p className="text-fg-muted">{rowCountText}</p>
 						) : null}
 						{downloadSaved ? <div className="mt-2">{downloadSaved}</div> : null}
 					</div>
@@ -262,7 +261,7 @@ const PartSummaryModal = ({
 							)}
 						/>
 						{rowCountText ? (
-							<p className="text-sm text-slate-600">{rowCountText}</p>
+							<p className="text-sm text-fg-muted">{rowCountText}</p>
 						) : null}
 						{downloadSaved ? <div>{downloadSaved}</div> : null}
 					</div>

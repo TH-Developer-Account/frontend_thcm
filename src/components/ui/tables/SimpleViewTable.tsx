@@ -142,6 +142,8 @@ export interface SimpleTableProps<T> {
 	onSelectionChange?: (ids: Set<string>) => void;
 
 	onRowClick?: (item: T) => void;
+	/** Extra class names for a row, e.g. to highlight the current workflow stage. */
+	rowClassName?: (item: T, index: number) => string | undefined;
 
 	loading?: boolean;
 	skeletonRows?: number;
@@ -217,6 +219,7 @@ export default function SimpleViewTable<T>({
 	selectedIds,
 	onSelectionChange,
 	onRowClick,
+	rowClassName,
 	loading = false,
 	skeletonRows = 5,
 	emptyTitle = "No records found",
@@ -454,6 +457,7 @@ export default function SimpleViewTable<T>({
 											"simple-table-row",
 											isInteractive ? "is-interactive" : "",
 											isSelected ? "is-selected" : "",
+											rowClassName?.(item, index) ?? "",
 										]
 											.filter(Boolean)
 											.join(" ")}

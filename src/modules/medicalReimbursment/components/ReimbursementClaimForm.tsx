@@ -1,4 +1,4 @@
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, type ReactNode, useState } from "react";
 import {
 	ArrowLeft,
 	BadgeIndianRupee,
@@ -67,6 +67,12 @@ export type ReimbursementClaimFormProps = UseReimbursementClaimFormArgs & {
 	onClosePdfPreview?: () => void;
 	statusBanner?: StatusBanner;
 	showAlertBanner?: boolean;
+	/** Optional sections rendered after the claim details (supplied by the page). */
+	commentsSection?: ReactNode;
+	auditSection?: ReactNode;
+	workflowSection?: ReactNode;
+	/** Accepted for call-site compatibility; the form renders its own layout. */
+	children?: ReactNode;
 };
 
 type ReimbursementClaimFormContentProps = Omit<
@@ -91,6 +97,9 @@ const ReimbursementClaimFormContent = ({
 	pdfUrl,
 	onClosePdfPreview,
 	statusBanner,
+	commentsSection,
+	auditSection,
+	workflowSection,
 }: ReimbursementClaimFormContentProps) => {
 	const {
 		values,
@@ -120,9 +129,6 @@ const ReimbursementClaimFormContent = ({
 		onBack,
 		submittedMessage,
 		actionText,
-		commentsSection,
-		auditSection,
-		workflowSection,
 		hasSubmitAction,
 		hasSaveDraftAction,
 		hasApproveStageAction,
@@ -712,6 +718,10 @@ const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
 		onClosePdfPreview,
 		statusBanner,
 		showAlertBanner,
+		commentsSection,
+		auditSection,
+		workflowSection,
+		children: _children,
 		...formArgs
 	} = props;
 
@@ -729,6 +739,9 @@ const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
 				handleDownloadPdf={handleDownloadPdf}
 				pdfUrl={pdfUrl}
 				onClosePdfPreview={onClosePdfPreview}
+				commentsSection={commentsSection}
+				auditSection={auditSection}
+				workflowSection={workflowSection}
 				statusBanner={showAlertBanner ? statusBanner : null}
 			/>
 		</ReimbursementClaimFormContext.Provider>

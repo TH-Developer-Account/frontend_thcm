@@ -103,14 +103,15 @@
 	display: none;
 }
 
+/* the peach background on every cell of the pending row */
 .cpp-workflow-table tr:has(.cpp-wf-pending-marker) > td {
 	background-color: var(--color-brand-subtle, #fff4ec);
 }
 
+/* the orange bar on the left edge */
 .cpp-workflow-table tr:has(.cpp-wf-pending-marker) > td:first-child {
 	box-shadow: inset 3px 0 0 var(--color-brand, #ea580c);
 }
-
 .cpp-wf-stage-text {
 	display: inline-flex;
 	flex-wrap: wrap;

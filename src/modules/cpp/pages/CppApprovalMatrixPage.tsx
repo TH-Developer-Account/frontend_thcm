@@ -9,6 +9,8 @@
 //   Tab 3  Workflow chains read-only preview of a band, as approval-flow tables
 // The server refuses a save that leaves a required role empty, then refreshes the
 // CPP workflow templates; the result of that refresh is shown to the admin.
+// The TCS group (last) is not an approval role: everyone in it gets the
+// approved-request mail with the PDF and the SAP text files.
 import { useMemo, useState } from "react";
 import { Plus, RefreshCw, Save, X } from "lucide-react";
 
@@ -219,6 +221,13 @@ type SlotRowData = {
 	willEmpty: boolean;
 };
 
+const addButtonText = (role: CppMatrixRole) =>
+	role.observer
+		? "Add observer"
+		: role.recipient
+			? "Add TCS user"
+			: "Add person";
+
 const PeopleCell = ({
 	row,
 	onChange,
@@ -263,7 +272,7 @@ const PeopleCell = ({
 				) : (
 					<Button
 						type="button"
-						text={role.observer ? "Add observer" : "Add person"}
+						text={addButtonText(role)}
 						Icon={Plus}
 						iconPosition="left"
 						size="sm"
@@ -279,6 +288,12 @@ const PeopleCell = ({
 				<p className="text-xs text-red-600">
 					Removing everyone here will be refused on save — workflows use this
 					role.
+				</p>
+			) : role.recipient ? (
+				<p className="text-xs text-slate-500">
+					{people.length
+						? "Only these people get the approved-request mail (proposer in CC)."
+						: "Nobody gets the approved-request mail until someone is added."}
 				</p>
 			) : people.length > 1 &&
 			  !role.observer &&
@@ -388,9 +403,11 @@ const AssignmentsTab = ({
 											</span>
 										) : null}
 										<span className="text-xs text-slate-400">
-											{row.role.usedByBands > 0
-												? `Used in ${row.role.usedByBands} workflow bands`
-												: "Not used by a band"}
+											{row.role.recipient
+												? "Mail only, not an approval stage"
+												: row.role.usedByBands > 0
+													? `Used in ${row.role.usedByBands} workflow bands`
+													: "Not used by a band"}
 										</span>
 									</div>
 								),

@@ -1,3 +1,7 @@
+import { Plus } from "lucide-react";
+
+import { Alert } from "../../../components/common/Alert";
+import Button from "../../../components/common/Button";
 import type { MasterDef } from "./masters.config";
 import type { MasterRow } from "./masters.types";
 
@@ -56,9 +60,16 @@ export const MasterList = ({
 				<h2 className="mh-list-title">
 					{def.label} <span className="mh-list-count">· {total}</span>
 				</h2>
-				<button type="button" className="mh-btn mh-btn--brand" onClick={onAdd}>
-					+ Add {def.singular}
-				</button>
+				<Button
+					type="button"
+					text={`Add ${def.singular}`}
+					Icon={Plus}
+					iconPosition="left"
+					appearance="standard"
+					variant="brand"
+					size="sm"
+					onClick={onAdd}
+				/>
 			</header>
 
 			<div className="mh-list-tools">
@@ -75,11 +86,21 @@ export const MasterList = ({
 
 			<div className="mh-rows">
 				{isError ? (
-					<div className="mh-empty" role="alert">
-						<p>Could not load {def.label.toLowerCase()}.</p>
-						<button type="button" className="mh-btn" onClick={onRetry}>
-							Try again
-						</button>
+					<div className="mh-empty">
+						<Alert
+							type="banner"
+							variant="error"
+							title={`Could not load ${def.label.toLowerCase()}`}
+							description="Please try again."
+						/>
+						<Button
+							type="button"
+							text="Try again"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							onClick={onRetry}
+						/>
 					</div>
 				) : isLoading ? (
 					<div className="mh-empty">Loading…</div>
@@ -147,22 +168,24 @@ export const MasterList = ({
 						{from}–{to} of {total}
 					</span>
 					<div>
-						<button
+						<Button
 							type="button"
-							className="mh-btn"
+							text="Previous"
+							appearance="standard"
+							variant="outline"
+							size="sm"
 							disabled={page <= 1}
 							onClick={() => onPageChange(page - 1)}
-						>
-							Previous
-						</button>
-						<button
+						/>
+						<Button
 							type="button"
-							className="mh-btn"
+							text="Next"
+							appearance="standard"
+							variant="outline"
+							size="sm"
 							disabled={page >= totalPages}
 							onClick={() => onPageChange(page + 1)}
-						>
-							Next
-						</button>
+						/>
 					</div>
 				</footer>
 			) : null}

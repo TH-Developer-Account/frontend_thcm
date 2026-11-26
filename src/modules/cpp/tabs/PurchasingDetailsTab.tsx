@@ -1,49 +1,35 @@
 // tabs/PurchasingDetailsTab.tsx — wizard step 2.
 // Suppliers, the summary sheet (part info) and the approval values.
 //
-// Approval values: when the saved summary sheet has parts, "Highest value per
-// part" and the amount band (annualised value / impact, actual impact) are picked
-// from a dropdown of those parts, highest first — the value is taken from the
-// part and shown read-only. Without a saved sheet the values are typed by hand.
-// Amounts are stored raw (no commas); the field shows commas and the amount in words.
+// Approval values are picked as RANGES from the approval matrix (utils/cpp.bands.ts):
+//   - "Highest value per part" (sheets 1, 5) or "Highest price variation %" (sheet 2)
+//   - the amount range: annualised value / annualised impact / actual impact
+// The amount ranges depend on the part / % range on sheets 1, 2 and 5, so that
+// dropdown opens once the first one is picked. The backend routes on these ranges.
+// Requests saved before the ranges existed still show their typed numbers in view mode.
 // Plain content: the parent card in CppRequestCreatePage provides the surface.
 import { useEffect, useMemo, useState } from "react";
-import {
-	Controller,
-	useFormContext,
-	useWatch,
-	type FieldPath,
-} from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { Download } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import ReadOnlyField from "../../../components/forms/ReadOnlyField";
-import SelectInput from "../../../components/forms/SelectInput";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import PartSummaryModal from "../components/PartSummaryModal";
 import {
 	FieldAnchor,
 	RhfAmountInput,
 	RhfInput,
+	RhfSelect,
 	useCppReadOnly,
 	useFieldError,
 } from "../components/CppFields";
-import type {
-	CppFormValues,
-	CppSummaryPart,
-} from "../types/cpp.types";
-import { formatAmountText } from "../utils/cpp.amount";
+import type { CppFormValues } from "../types/cpp.types";
+import { amountBandOptions, partBandOptions } from "../utils/cpp.bands";
 import {
 	CPP_AMOUNT_BASIS_LABELS,
 	CPP_PART_BASIS_LABELS,
 } from "../utils/cpp.constants";
 import { canDownload, downloadCppFile } from "../utils/cpp.files";
-import {
-	partAmountOf,
-	partLabel,
-	partOptions,
-	partPriceOf,
-} from "../utils/cpp.parts";
 import { RECOMMENDED_CODE_REQUIRED } from "../utils/cpp.schema";
 import { getCondition } from "../utils/cpp.utils";
 
@@ -86,99 +72,36 @@ const SupplierBlock = ({
 	);
 };
 
-/* ------------------------------ part pickers ------------------------------ */
+/* ----------------------------- approval ranges ----------------------------- */
 
-type ApprovalKey = keyof CppFormValues["approvalValues"];
-
-/**
- * Picks one summary-sheet part and copies its value into `valueName`.
- * Falls back to a typed amount when the sheet has no parts yet.
- */
-const PartValueField = ({
-	label,
-	partName,
-	valueName,
-	valueOf,
-}: {
-	label: string;
-	partName: ApprovalKey;
-	valueName: ApprovalKey;
-	valueOf: (part: CppSummaryPart) => number | null;
-}) => {
-	const { control, setValue } = useFormContext<CppFormValues>();
-	const readOnly = useCppReadOnly();
-	const partPath = `approvalValues.${partName}` as FieldPath<CppFormValues>;
-	const valuePath = `approvalValues.${valueName}` as FieldPath<CppFormValues>;
-	const partError = useFieldError(partPath);
-	const parts =
-		(useWatch({ control, name: "summaryParts" }) as CppSummaryPart[]) ?? [];
-	const options = useMemo(() => partOptions(parts, valueOf), [parts, valueOf]);
-	const selectOptions = useMemo(
-		() =>
-			options.map((option) => ({
-				value: option.key,
-				label: `${partLabel(option.part)} — ₹ ${formatAmountText(option.value)}`,
-			})),
-		[options],
-	);
-
-	// No saved sheet (or no part has this value): type the amount.
-	if (options.length === 0)
-		return (
-			<div className="flex flex-col gap-1">
-				<RhfAmountInput name={valuePath} label={label} required />
-				{readOnly ? null : (
-					<p className="form-helper-text">
-						Upload the summary sheet and save the draft to pick the part
-						instead of typing.
-					</p>
-				)}
-			</div>
-		);
+/** View mode of a request saved before the ranges existed: its typed numbers. */
+const LegacyApprovalValues = () => {
+	const { control } = useFormContext<CppFormValues>();
+	const conditionCode = useWatch({ control, name: "condition" });
+	const condition = getCondition(conditionCode);
+	if (!condition) return null;
 
 	return (
-		<div className="flex flex-col gap-2">
-			<Controller
-				name={partPath}
-				control={control}
-				render={({ field }) => {
-					const selected =
-						selectOptions.find((option) => option.value === field.value) ??
-						null;
-					return (
-						<FieldAnchor name={partPath}>
-							{readOnly ? (
-								<ReadOnlyField
-									label={`${label} — part`}
-									value={selected?.label ?? (field.value as string)}
-								/>
-							) : (
-								<SelectInput
-									inputId={partPath}
-									name={partPath}
-									label={`${label} — part`}
-									required
-									placeholder="Select the part (highest first)"
-									options={selectOptions}
-									value={selected}
-									onChange={(option: { value: string } | null) => {
-										const key = option?.value ?? "";
-										field.onChange(key);
-										const match = options.find((item) => item.key === key);
-										setValue(valuePath, match ? String(match.value) : "", {
-											shouldDirty: true,
-											shouldValidate: true,
-										});
-									}}
-									error={partError}
-								/>
-							)}
-						</FieldAnchor>
-					);
-				}}
+		<div className="grid gap-4 sm:grid-cols-2">
+			{condition.partBasis === "PART_VALUE" ? (
+				<RhfAmountInput
+					name="approvalValues.partValue"
+					label={CPP_PART_BASIS_LABELS.PART_VALUE}
+					disabled
+				/>
+			) : null}
+			{condition.partBasis === "VARIATION_PCT" ? (
+				<RhfInput
+					name="approvalValues.variationPct"
+					label={CPP_PART_BASIS_LABELS.VARIATION_PCT}
+					disabled
+				/>
+			) : null}
+			<RhfAmountInput
+				name="approvalValues.amount"
+				label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
+				disabled
 			/>
-			{/* The picked part's value: shown, never typed. */}
-			<RhfAmountInput name={valuePath} label={label} disabled />
 		</div>
 	);
 };
@@ -186,23 +109,36 @@ const PartValueField = ({
 const ApprovalValuesFields = () => {
 	const { control, setValue } = useFormContext<CppFormValues>();
 	const readOnly = useCppReadOnly();
-	const conditionCode = useWatch({ control, name: "condition" });
+	const [conditionCode, category, plant, approval] = useWatch({
+		control,
+		name: ["condition", "category", "plant", "approvalValues"],
+	});
+	const partBand = approval?.partBand ?? "";
+	const amountBand = approval?.amountBand ?? "";
 	const condition = getCondition(conditionCode);
-	const amountBasis = condition?.amountBasis ?? "ANNUALISED_VALUE";
-	const amountOf = useMemo(() => partAmountOf(amountBasis), [amountBasis]);
 
-	// Drop values the new condition no longer reads, so stale numbers never route.
-	// View mode must never rewrite a saved request, so it skips this.
+	const partOptions = useMemo(
+		() => partBandOptions(conditionCode, category, plant),
+		[conditionCode, category, plant],
+	);
+	const amountOptions = useMemo(
+		() => amountBandOptions(conditionCode, category, plant, partBand),
+		[conditionCode, category, plant, partBand],
+	);
+
+	// Keep the picks valid when the condition, the Spares flow or the part range
+	// changes, so a stale range never routes. A single possible range (e.g. ">₹1 L
+	// per part" -> "Any value") is picked for the user. View mode never rewrites.
 	useEffect(() => {
 		if (readOnly) return;
-		if (condition?.partBasis !== "PART_VALUE") {
-			setValue("approvalValues.partValue", "");
-			setValue("approvalValues.partValuePart", "");
-		}
-		if (condition?.partBasis !== "VARIATION_PCT") {
-			setValue("approvalValues.variationPct", "");
-		}
-	}, [condition?.partBasis, readOnly, setValue]);
+		const options = { shouldDirty: true, shouldValidate: false };
+		if (partBand && !partOptions.some((o) => o.value === partBand))
+			setValue("approvalValues.partBand", "", options);
+		if (amountBand && !amountOptions.some((o) => o.value === amountBand))
+			setValue("approvalValues.amountBand", "", options);
+		else if (!amountBand && amountOptions.length === 1)
+			setValue("approvalValues.amountBand", amountOptions[0].value, options);
+	}, [amountBand, amountOptions, partBand, partOptions, readOnly, setValue]);
 
 	if (!condition)
 		return (
@@ -211,30 +147,37 @@ const ApprovalValuesFields = () => {
 			</p>
 		);
 
+	const legacy =
+		readOnly &&
+		!partBand &&
+		!amountBand &&
+		Boolean(approval?.partValue || approval?.variationPct || approval?.amount);
+	if (legacy) return <LegacyApprovalValues />;
+
+	const needsPart = partOptions.length > 0;
+
 	return (
 		<div className="grid gap-4 sm:grid-cols-2">
-			{condition.partBasis === "PART_VALUE" ? (
-				<PartValueField
-					label={CPP_PART_BASIS_LABELS.PART_VALUE}
-					partName="partValuePart"
-					valueName="partValue"
-					valueOf={partPriceOf}
-				/>
-			) : null}
-			{condition.partBasis === "VARIATION_PCT" ? (
-				<RhfInput
-					name="approvalValues.variationPct"
-					label={CPP_PART_BASIS_LABELS.VARIATION_PCT}
+			{needsPart && condition.partBasis ? (
+				<RhfSelect
+					name="approvalValues.partBand"
+					label={CPP_PART_BASIS_LABELS[condition.partBasis]}
 					required
-					inputMode="decimal"
-					placeholder="Absolute %, e.g. 12.5"
+					placeholder="Select range"
+					options={partOptions}
 				/>
 			) : null}
-			<PartValueField
-				label={CPP_AMOUNT_BASIS_LABELS[amountBasis]}
-				partName="amountPart"
-				valueName="amount"
-				valueOf={amountOf}
+			<RhfSelect
+				name="approvalValues.amountBand"
+				label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
+				required
+				placeholder={
+					needsPart && !partBand
+						? `Select ${condition.partBasis === "VARIATION_PCT" ? "the variation %" : "the part value"} first`
+						: "Select range"
+				}
+				isDisabled={amountOptions.length === 0}
+				options={amountOptions}
 			/>
 		</div>
 	);

@@ -135,11 +135,13 @@ export const formToSections = (
 			},
 			// Raw numbers only (the amount inputs never store commas).
 			approvalValues: {
-				partValue: text(values.approvalValues.partValue),
-				variationPct: text(values.approvalValues.variationPct),
-				amount: text(values.approvalValues.amount),
-				partValuePart: text(values.approvalValues.partValuePart),
-				amountPart: text(values.approvalValues.amountPart),
+				partValue: "",
+				variationPct: "",
+				amount: "",
+				partValuePart: "",
+				amountPart: "",
+				partBand: text(values.approvalValues.partBand),
+				amountBand: text(values.approvalValues.amountBand),
 			},
 		},
 	},

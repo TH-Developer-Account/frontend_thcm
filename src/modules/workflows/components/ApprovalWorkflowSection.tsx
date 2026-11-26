@@ -7,14 +7,18 @@ import {
 export type ApprovalWorkflowSectionProps = {
 	stages: ApprovalStageLike[];
 	additionalFlows?: ApprovalWorkflowFlowGroup[];
+	/** activeWorkflow.currentStage: highlights the stage the workflow is at. */
+	currentStageOrder?: number | null;
 };
 
 export const ApprovalWorkflowSection = ({
 	stages,
 	additionalFlows = [],
+	currentStageOrder,
 }: ApprovalWorkflowSectionProps) => (
 	<ApprovalWorkflowTableContent
 		stages={stages}
 		additionalFlows={additionalFlows}
+		currentStageOrder={currentStageOrder}
 	/>
 );

@@ -2,8 +2,8 @@
 // Columns: Stage · Approver (avatar, name, email) · Status.
 // Built here, not in the shared ApprovalTable, so other modules keep their columns.
 // The stage the request is waiting on is highlighted (whole rows + "Pending here"
-// tag). SimpleViewTable has no row class, so each line carries a hidden marker and
-// cpp.compact.css styles `tr:has(.cpp-wf-pending-marker)`.
+// tag) through SimpleViewTable's rowClassName, with Tailwind classes, so it does
+// not depend on cpp.compact.css being imported.
 import { useMemo } from "react";
 
 import { Badge } from "../../../components/common/Badge";
@@ -13,6 +13,12 @@ import { mapWorkflowStagesToApprovalRows } from "../../workflows/utils/approvalW
 
 const EMPTY = "--";
 const AVATAR_TONES = 4;
+
+const PENDING_ROW_CLASS =
+	"bg-[var(--color-brand-subtle,#fff7ed)] shadow-[inset_3px_0_0_var(--color-brand,#ea580c)]";
+
+const PENDING_TAG_CLASS =
+	"ml-2 inline-flex items-center whitespace-nowrap rounded-full border border-[var(--color-brand,#ea580c)] bg-white px-2 align-middle text-[11px] font-medium leading-5 text-[#c2410c]";
 
 type WorkflowLine = {
 	key: string;
@@ -162,7 +168,10 @@ type CppWorkflowTableProps = {
 	currentStageId?: string | null;
 };
 
-const CppWorkflowTable = ({ stages, currentStageId }: CppWorkflowTableProps) => {
+const CppWorkflowTable = ({
+	stages,
+	currentStageId,
+}: CppWorkflowTableProps) => {
 	const lines = useMemo(
 		() => toLines(stages, currentStageId),
 		[stages, currentStageId],
@@ -174,6 +183,9 @@ const CppWorkflowTable = ({ stages, currentStageId }: CppWorkflowTableProps) => 
 				data={lines}
 				getRowId={(line) => line.key}
 				maxHeight="none"
+				rowClassName={(line) =>
+					line.isPending ? PENDING_ROW_CLASS : undefined
+				}
 				ariaLabel="Approval workflow approvers"
 				emptyTitle="No approval stages"
 				emptyDescription="Approvers appear here once the workflow is assigned."
@@ -183,24 +195,18 @@ const CppWorkflowTable = ({ stages, currentStageId }: CppWorkflowTableProps) => 
 						header: "Stage",
 						widthUnits: 3,
 						minWidth: 180,
-						render: (line) => (
-							<>
-								{line.isPending ? (
-									<span className="cpp-wf-pending-marker" aria-hidden="true" />
-								) : null}
-								{line.isFirstInStage ? (
-									<span className="cpp-wf-stage">
-										<span className="cpp-wf-stage-no">{line.stageOrder}</span>
-										<span className="cpp-wf-stage-text">
-											{line.stageName}
-											{line.isPending ? (
-												<span className="cpp-wf-pending-tag">Pending here</span>
-											) : null}
-										</span>
+						render: (line) =>
+							line.isFirstInStage ? (
+								<span className="cpp-wf-stage">
+									<span className="cpp-wf-stage-no">{line.stageOrder}</span>
+									<span className="cpp-wf-stage-text">
+										{line.stageName}
+										{line.isPending ? (
+											<span className={PENDING_TAG_CLASS}></span>
+										) : null}
 									</span>
-								) : null}
-							</>
-						),
+								</span>
+							) : null,
 					},
 					{
 						key: "approver",

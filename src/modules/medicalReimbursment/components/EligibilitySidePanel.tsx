@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import Card from "../../../components/common/Card";
 import {
 	currencyFormatter,
+	resolveApprovedAmount,
 	useReimbursementClaimFormContext,
 } from "../hooks/useReimbursementClaimForm";
 
@@ -98,14 +99,25 @@ export const EligibilitySidePanel = ({
 		resolvedEligibleAmount,
 		settledAmount,
 		lineItemsTotal,
-		approvedTotal,
+		savedClaims,
+		heldAmount,
 		eligibility,
 		eligibilityPeriodLabel,
-		pendingAmount,
 		isReadOnly,
 	} = useReimbursementClaimFormContext();
 
 	const format = (amount: number) => currencyFormatter.format(amount);
+
+	// Sum of the line items the approver has approved so far.
+	const approvedTotal = savedClaims.reduce(
+		(total, item) =>
+			item.approvalStatus === "APPROVED"
+				? total + (Number(resolveApprovedAmount(item)) || 0)
+				: total,
+		0,
+	);
+	// Amount held by the claimant's other in-progress claims (0 = nothing).
+	const pendingAmount = heldAmount > 0 ? heldAmount : undefined;
 
 	if (!selectedGrade) {
 		return (

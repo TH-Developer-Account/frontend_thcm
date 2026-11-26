@@ -12,6 +12,7 @@ import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { ApprovalWorkflowTableContent } from "../../workflows";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
 import { useMedicalClaimView } from "../hooks/useMedicalClaimView";
+import { useMedicalClaimPdfPreview } from "../hooks/useMedicalClaimPdfPreview";
 import type { ReimbursementClaimFormMode } from "../types/reimbursementClaim.types";
 
 type ReimbursementPageProps = {
@@ -35,6 +36,7 @@ const ReimbursementPage = ({ mode, refreshKey = 0 }: ReimbursementPageProps) => 
 
 	const resolvedClaimId = claimId || medicalClaimId || id;
 	const claimView = useMedicalClaimView({ claimId: resolvedClaimId });
+	const pdfPreview = useMedicalClaimPdfPreview(resolvedClaimId);
 
 	let content: ReactNode;
 
@@ -92,14 +94,14 @@ const ReimbursementPage = ({ mode, refreshKey = 0 }: ReimbursementPageProps) => 
 				enforceEligibilityLimit={false}
 				isExportingExcel={claimView.isExportingExcel}
 				handleExport={claimView.permissions.canExport ? claimView.handleExport : undefined}
-				isPreparingPdf={claimView.isPreparingPdf}
+				isPreparingPdf={pdfPreview.isPreparingPdf}
 				isDownloadingPdf={claimView.isDownloadingPdf}
-				handleViewPdf={claimView.permissions.canDownloadPdf ? claimView.handleViewPdf : undefined}
+				handleViewPdf={claimView.permissions.canDownloadPdf ? pdfPreview.handleViewPdf : undefined}
 				handleDownloadPdf={
 					claimView.permissions.canDownloadPdf ? claimView.handleDownloadPdf : undefined
 				}
-				pdfUrl={claimView.pdfUrl}
-				onClosePdfPreview={claimView.closePdfPreview}
+				pdfUrl={pdfPreview.pdfUrl}
+				onClosePdfPreview={pdfPreview.closePdfPreview}
 				canApprove={claimView.canApprove}
 				canClarify={claimView.canClarify}
 				canReviewLineItems={claimView.canApproveLineItems}

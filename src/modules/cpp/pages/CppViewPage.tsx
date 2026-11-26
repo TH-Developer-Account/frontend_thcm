@@ -27,6 +27,7 @@ import {
 import ActionMenu, {
 	type ActionMenuItem,
 } from "../../../components/common/ActionMenu";
+import { Alert } from "../../../components/common/Alert";
 import Button from "../../../components/common/Button";
 import Badge from "../../../components/common/Badge";
 import Card from "../../../components/common/Card";
@@ -339,7 +340,7 @@ const CppViewPage = () => {
 				<>
 					<Button
 						type="button"
-						text="Back to listing"
+						text="Back to Dashboard"
 						Icon={ArrowLeft}
 						iconPosition="left"
 						iconSize={16}
@@ -396,9 +397,12 @@ const CppViewPage = () => {
 				{header}
 				<Card padding="spacious">
 					<div className="flex flex-col items-start gap-3">
-						<p className="text-sm text-rejected" role="alert">
-							{getApiErrorMessage(error, "Unable to load this CPP request.")}
-						</p>
+						<Alert
+							type="banner"
+							variant="error"
+							title="Unable to load this CPP request"
+							description={getApiErrorMessage(error, "Please try again.")}
+						/>
 						<Button
 							type="button"
 							text="Retry"

@@ -67,9 +67,16 @@ const ReimbursementClaimListingTable = ({
 				/>
 			}
 		>
-			<section aria-label="Your medical claims" aria-busy={isLoading || isFetching}>
+			<section
+				aria-label="Your medical claims"
+				aria-busy={isLoading || isFetching}
+			>
 				{isLoading ? (
-					<DataTableSkeleton rows={SKELETON_ROW_COUNT} columns={columns.length} showPagination />
+					<DataTableSkeleton
+						rows={SKELETON_ROW_COUNT}
+						columns={columns.length}
+						showPagination
+					/>
 				) : isError ? (
 					<div className="flex flex-col items-start gap-3 p-4">
 						<Alert
@@ -79,7 +86,14 @@ const ReimbursementClaimListingTable = ({
 							description={errorMessage ?? "Please try again."}
 						/>
 						{onRetry ? (
-							<Button type="button" text="Retry" size="sm" appearance="standard" variant="outline" onClick={onRetry} />
+							<Button
+								type="button"
+								text="Retry"
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								onClick={onRetry}
+							/>
 						) : null}
 					</div>
 				) : (

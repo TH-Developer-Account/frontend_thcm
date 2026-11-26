@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 
+import Button from "../../../components/common/Button";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import { useToast } from "../../../context/Auth/AuthContext";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { useMasterData } from "../../../hooks/useMasterData";
 import { useSaveMaster } from "../../../hooks/useSaveMaster";
@@ -21,8 +25,6 @@ const PAGE_SIZE = 25;
 
 /** Which pane is visible on phones. On desktop all panes show at once. */
 type Pane = "hub" | "list" | "form";
-
-type ToastState = { type: "success" | "error"; message: string } | null;
 
 type Feed = Record<string, FeedOption[] | undefined>;
 
@@ -58,7 +60,7 @@ const MastersPage = () => {
 	const [page, setPage] = useState(1);
 	// A row = editing it, "new" = creating, null = nothing open.
 	const [selected, setSelected] = useState<MasterRow | "new" | null>(null);
-	const [toast, setToast] = useState<ToastState>(null);
+	const { showToast } = useToast();
 
 	const def = getMasterDef(activeKey);
 	const search = useDebounced(searchInput.trim().toLowerCase(), 250);
@@ -108,12 +110,6 @@ const MastersPage = () => {
 		[filtered, page],
 	);
 
-	useEffect(() => {
-		if (!toast) return;
-		const timer = window.setTimeout(() => setToast(null), 4000);
-		return () => window.clearTimeout(timer);
-	}, [toast]);
-
 	// Keep the open record in step with a refetch (e.g. after Save).
 	const activeRows = rowsByMaster[activeKey];
 	useEffect(() => {
@@ -123,7 +119,12 @@ const MastersPage = () => {
 		});
 	}, [activeRows]);
 
-	const notify = (type: "success" | "error", message: string) => setToast({ type, message });
+	const notify = (type: "success" | "error", message: string) =>
+		showToast({
+			type,
+			title: type === "success" ? "Saved" : "Unable to save",
+			description: message,
+		});
 
 	const handleSelectMaster = (key: MasterKey) => {
 		setActiveKey(key);
@@ -177,9 +178,20 @@ const MastersPage = () => {
 
 	return (
 		<PageSectionLayout>
+			<PageHeader
+				headerText="Masters"
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "Masters page location",
+					breadcrumbs: [
+						{ label: "Home Screen", href: "/" },
+						{ label: "Masters" },
+					],
+					separator: "›",
+				}}
+			/>
 			<div className="mh" data-pane={pane}>
 				<header className="mh-header">
-					<h1 className="mh-title">Masters</h1>
 					<p className="mh-subtitle">Reference data used across the dropdowns of every app.</p>
 				</header>
 
@@ -219,22 +231,20 @@ const MastersPage = () => {
 						) : (
 							<div className="mh-empty mh-empty--detail">
 								<p>Select a {def.singular} to view or edit it.</p>
-								<button type="button" className="mh-btn mh-btn--brand" onClick={openNew}>
-									+ Add {def.singular}
-								</button>
+								<Button
+									type="button"
+									text={`Add ${def.singular}`}
+									Icon={Plus}
+									iconPosition="left"
+									appearance="standard"
+									variant="brand"
+									size="sm"
+									onClick={openNew}
+								/>
 							</div>
 						)}
 					</div>
 				</div>
-
-				{toast ? (
-					<div
-						className={`mh-toast mh-toast--${toast.type}`}
-						role={toast.type === "error" ? "alert" : "status"}
-					>
-						{toast.message}
-					</div>
-				) : null}
 			</div>
 		</PageSectionLayout>
 	);

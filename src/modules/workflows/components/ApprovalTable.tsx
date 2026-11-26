@@ -38,6 +38,12 @@ type ApprovalTableProps = {
 	defaultExpanded?: boolean;
 	/** Scroll container max-height. Defaults to SimpleViewTable's 420px. */
 	maxHeight?: string;
+	/**
+	 * Id of the stage the workflow is currently at (the row id, i.e. stage.id).
+	 * That row is highlighted. Without it, the first stage whose status is
+	 * IN_PROGRESS / PENDING is used.
+	 */
+	currentStageId?: string | number | null;
 };
 
 type ApproverRow = NonNullable<ApprovalTableRow["approvers"]>[number];
@@ -104,6 +110,32 @@ const renderValueStack = (
 	);
 };
 
+const PENDING_STATUSES = new Set(["IN_PROGRESS", "PENDING"]);
+
+const isPendingStatus = (status?: string | null): boolean =>
+	Boolean(status) &&
+	PENDING_STATUSES.has(
+		String(status)
+			.trim()
+			.toUpperCase()
+			.replace(/[\s-]+/g, "_"),
+	);
+
+/** Id of the stage the workflow is currently at: the explicit current stage, else the first one in progress. */
+const findPendingRowId = (
+	rows: ApprovalTableRow[],
+	currentStageId?: string | number | null,
+): string | null => {
+	if (currentStageId !== null && currentStageId !== undefined) {
+		const current = rows.find(
+			(item) => String(item.id) === String(currentStageId),
+		);
+		if (current) return String(current.id);
+	}
+	const row = rows.find((item) => isPendingStatus(item.status));
+	return row ? String(row.id) : null;
+};
+
 const renderStatus = (status?: string | null) =>
 	status ? <Badge status={status} /> : renderEmptyValue();
 
@@ -122,6 +154,7 @@ const renderEmail = (email?: string | null) =>
 
 const buildColumns = (
 	getRowView: (row: ApprovalTableRow) => RowView,
+	pendingRowId: string | null,
 ): TableColumn[] => [
 	{
 		key: "stage",
@@ -160,6 +193,9 @@ const buildColumns = (
 		render: (row) => (
 			<span className="approval-table-primary-value">
 				{row.stageName || "--"}
+				{pendingRowId !== null && String(row.id) === pendingRowId ? (
+					<span className="approval-pending-tag"></span>
+				) : null}
 			</span>
 		),
 	},
@@ -388,6 +424,7 @@ export const ApprovalTable = ({
 	collapsedCount = 3,
 	defaultExpanded = false,
 	maxHeight,
+	currentStageId,
 }: ApprovalTableProps) => {
 	const tableData = useMemo(() => data ?? rows ?? [], [data, rows]);
 
@@ -407,6 +444,11 @@ export const ApprovalTable = ({
 			return next;
 		});
 	}, []);
+
+	const pendingRowId = useMemo(
+		() => findPendingRowId(tableData, currentStageId),
+		[tableData, currentStageId],
+	);
 
 	const columns = useMemo(() => {
 		const getRowView = (row: ApprovalTableRow): RowView => {
@@ -428,10 +470,17 @@ export const ApprovalTable = ({
 			};
 		};
 
-		return buildColumns(getRowView).filter(
+		return buildColumns(getRowView, pendingRowId).filter(
 			(column) => !hiddenColumns?.includes(column.key),
 		);
-	}, [toggledIds, collapsedCount, defaultExpanded, toggleRow, hiddenColumns]);
+	}, [
+		toggledIds,
+		collapsedCount,
+		defaultExpanded,
+		toggleRow,
+		hiddenColumns,
+		pendingRowId,
+	]);
 
 	if (variant === "pdf") return <ApprovalPdfTable data={tableData} />;
 
@@ -440,7 +489,7 @@ export const ApprovalTable = ({
 			<div>
 				{title ? <div>{title}</div> : null}
 				{subtitle ? (
-					<p className="text-xs font-normal text-slate-500">{subtitle}</p>
+					<p className="text-xs font-normal text-fg-muted">{subtitle}</p>
 				) : null}
 			</div>
 		) : undefined;
@@ -454,6 +503,11 @@ export const ApprovalTable = ({
 			emptyTitle={emptyTitle}
 			emptyDescription={emptyDescription}
 			maxHeight={maxHeight}
+			rowClassName={(row) =>
+				pendingRowId !== null && String(row.id) === pendingRowId
+					? "approval-row-current bg-[var(--color-brand-subtle,#fff7ed)]"
+					: undefined
+			}
 			className={["approval-flow-table", className].filter(Boolean).join(" ")}
 			ariaLabel={title ?? "Approval flow"}
 		/>

@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 
+import { Alert } from "../../../components/common/Alert";
 import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
@@ -44,14 +45,12 @@ const BusinessPartnerView = () => {
 	if (isError || !view) {
 		return (
 			<PageSectionLayout>
-				<div role="alert" className="alert-card">
-					<h2 className="alert-title">Unable to load business partner</h2>
-
-					<p className="alert-description">
-						The requested business The requested business partner could not be
-						retrieved.
-					</p>
-				</div>
+				<Alert
+					type="banner"
+					variant="error"
+					title="Unable to load business partner"
+					description="The requested business partner could not be retrieved."
+				/>
 			</PageSectionLayout>
 		);
 	}

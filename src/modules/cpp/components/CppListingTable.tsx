@@ -99,6 +99,7 @@ export default function CppListingTable({
 					variant="underline"
 				/>
 			}
+			headerClassName="border-none pb-3"
 			actions={
 				<div className="flex flex-row gap-4">
 					<SearchInput

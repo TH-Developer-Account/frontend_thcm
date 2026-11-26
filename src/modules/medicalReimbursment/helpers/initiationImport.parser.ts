@@ -41,7 +41,10 @@ const HEADER_ALIASES: Record<keyof MedicalClaimInitiationPayload, string[]> = {
 	],
 };
 
-const COLUMN_LABELS: Record<keyof MedicalClaimInitiationPayload, string> = {
+export const COLUMN_LABELS: Record<
+	keyof MedicalClaimInitiationPayload,
+	string
+> = {
 	employeeName: "Employee Name",
 	ticketNumber: "Ticket Number",
 	email: "Email",

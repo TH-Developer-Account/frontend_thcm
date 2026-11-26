@@ -38,9 +38,9 @@ const AmortisationTab = () => {
 				</div>
 			)}
 
-			<div className="overflow-x-auto rounded-md border border-slate-200 scrollbar-sleek">
+			<div className="overflow-x-auto rounded-md border border-line scrollbar-sleek">
 				<table className="w-full min-w-[960px] text-sm">
-					<thead className="bg-slate-50 text-xs font-semibold text-slate-700">
+					<thead className="bg-surface-readonly text-xs font-semibold text-fg">
 						<tr>
 							<th className="px-2 py-2 text-left">Part no</th>
 							<th className="px-2 py-2 text-right">
@@ -62,7 +62,7 @@ const AmortisationTab = () => {
 							return (
 								<tr
 									key={field.id}
-									className="border-t border-slate-200 align-top"
+									className="border-t border-line align-top"
 								>
 									<td className="px-1.5 py-1.5">
 										<RhfInput

@@ -360,7 +360,15 @@ export const getDefaultValues = (): CppFormValues => ({
 		recommended: emptySupplier(),
 	},
 	purchasingFile: null,
-	approvalValues: { partValue: "", variationPct: "", amount: "" },
+	approvalValues: {
+		partValue: "",
+		variationPct: "",
+		amount: "",
+		partValuePart: "",
+		amountPart: "",
+		partBand: "",
+		amountBand: "",
+	},
 	amortisation: [emptyAmort()],
 	volumes: { DWD: emptyVolume(), KGP: emptyVolume(), SPARE: emptyVolume() },
 	perMachineImpact: [emptyPerMachine()],
@@ -387,6 +395,8 @@ export const getDefaultValues = (): CppFormValues => ({
 	},
 	// No typed line items any more — the Excel carries them.
 	parts: [],
+	// Summary-sheet rows read by the server; filled when a saved request loads.
+	summaryParts: [],
 	financial: {
 		noChange: false,
 		plantSplit: { DWD: "", KGP: "", SPARE: "" },
