@@ -26,7 +26,9 @@ const STATUS_STYLE: Record<ArtworkRequest["status"], string> = {
 };
 
 const msg = (e: unknown) =>
-  (e as any)?.response?.data?.message ?? (e as Error)?.message ?? "Something went wrong";
+  (e as any)?.response?.data?.message ??
+  (e as Error)?.message ??
+  "Something went wrong";
 
 function LinkRow({ link }: { link: string }) {
   const [copied, setCopied] = useState(false);
@@ -41,12 +43,26 @@ function LinkRow({ link }: { link: string }) {
   };
   return (
     <div className="flex items-center gap-2">
-      <input readOnly value={link} className="min-w-0 flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm" />
-      <a href={link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-xs hover:bg-gray-50">
+      <input
+        readOnly
+        value={link}
+        className="min-w-0 flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm"
+      />
+      <a
+        href={link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-xs hover:bg-gray-50"
+      >
         <ExternalLink size={13} /> Open
       </a>
-      <button type="button" onClick={copy} className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-xs hover:bg-gray-50">
-        {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy"}
+      <button
+        type="button"
+        onClick={copy}
+        className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-2 text-xs hover:bg-gray-50"
+      >
+        {copied ? <Check size={13} /> : <Copy size={13} />}{" "}
+        {copied ? "Copied" : "Copy"}
       </button>
     </div>
   );
@@ -82,21 +98,36 @@ function Row({
         <div className="min-w-0">
           <p className="font-medium text-gray-900">{item.label}</p>
           <p className="text-xs text-gray-500">
-            {item.productName} · {item.artworkType} · {item.width} × {item.height} {item.unit}
+            {item.productName} · {item.artworkType} · {item.width} ×{" "}
+            {item.height} {item.unit}
           </p>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[item.status]}`}>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[item.status]}`}
+        >
           {STATUS_LABEL[item.status]}
         </span>
       </div>
 
-      {item.description && <p className="mt-2 text-sm text-gray-700">{item.description}</p>}
+      {item.description && (
+        <p className="mt-2 text-sm text-gray-700">{item.description}</p>
+      )}
 
       {item.attachments.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {item.attachments.map((a) => (
-            <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" title={a.description ?? a.fileName}>
-              <img src={a.url} alt={a.description ?? a.fileName} className="h-14 w-14 rounded border border-gray-200 object-cover" />
+            <a
+              key={a.id}
+              href={a.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={a.description ?? a.fileName}
+            >
+              <img
+                src={a.url}
+                alt={a.description ?? a.fileName}
+                className="h-14 w-14 rounded border border-gray-200 object-cover"
+              />
             </a>
           ))}
         </div>
@@ -110,7 +141,9 @@ function Row({
 
       {/* Requester view: show the shared link */}
       {item.linkUrl && !canSubmitLink && (
-        <div className="mt-3"><LinkRow link={item.linkUrl} /></div>
+        <div className="mt-3">
+          <LinkRow link={item.linkUrl} />
+        </div>
       )}
 
       {/* Artwork team view: one input, saved per line */}
@@ -120,7 +153,10 @@ function Row({
           onSubmit={(e) => {
             e.preventDefault();
             setError(null);
-            submit.mutate({ artworkId: item.id, url }, { onError: (x) => setError(msg(x)) });
+            submit.mutate(
+              { artworkId: item.id, url },
+              { onError: (x) => setError(msg(x)) },
+            );
           }}
         >
           <Link2 size={14} className="text-gray-400" />
@@ -131,10 +167,24 @@ function Row({
             className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
           {item.linkUrl && (
-            <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-orange-700 underline">Open</a>
+            <a
+              href={item.linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-orange-700 underline"
+            >
+              Open
+            </a>
           )}
-          <button disabled={!url.trim() || submit.isPending} className="rounded-md bg-orange-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50">
-            {item.status === "LINK_SHARED" ? "Update link" : item.status === "EDIT_REQUESTED" ? "Submit updated link" : "Submit link"}
+          <button
+            disabled={!url.trim() || submit.isPending}
+            className="rounded-md bg-orange-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+          >
+            {item.status === "LINK_SHARED"
+              ? "Update link"
+              : item.status === "EDIT_REQUESTED"
+                ? "Submit updated link"
+                : "Submit link"}
           </button>
         </form>
       )}
@@ -154,8 +204,16 @@ function Row({
 
       {canRequestEdit && editing && (
         <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-gray-700">What should change?</label>
-          <textarea rows={3} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <label className="block text-xs font-medium text-gray-700">
+            What should change?
+          </label>
+          <textarea
+            rows={3}
+            maxLength={1000}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
           <div className="flex gap-2">
             <button
               type="button"
@@ -163,23 +221,40 @@ function Row({
               onClick={() =>
                 edit.mutate(
                   { artworkId: item.id, note },
-                  { onSuccess: () => { setEditing(false); setNote(""); setError(null); }, onError: (x) => setError(msg(x)) },
+                  {
+                    onSuccess: () => {
+                      setEditing(false);
+                      setNote("");
+                      setError(null);
+                    },
+                    onError: (x) => setError(msg(x)),
+                  },
                 )
               }
               className="inline-flex items-center gap-1 rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
             >
               <Send size={12} /> Send edit request
             </button>
-            <button type="button" onClick={() => setEditing(false)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs">Cancel</button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs"
+            >
+              Cancel
+            </button>
           </div>
-          <p className="text-xs text-gray-500">The artwork team is emailed automatically.</p>
+          <p className="text-xs text-gray-500">
+            The artwork team is emailed automatically.
+          </p>
         </div>
       )}
 
       {canRequestEdit && waiting && (
         <button
           type="button"
-          onClick={() => remind.mutate(item.id, { onError: (x) => setError(msg(x)) })}
+          onClick={() =>
+            remind.mutate(item.id, { onError: (x) => setError(msg(x)) })
+          }
           disabled={remind.isPending}
           className="mt-3 text-xs text-gray-600 underline disabled:opacity-50"
         >
@@ -192,15 +267,19 @@ function Row({
 
 export function ArtworkRequestsPanel({ crfId }: { crfId: string }) {
   const { data, isLoading, error } = useArtworksQuery(crfId);
-  if (isLoading) return <p className="text-sm text-gray-500">Loading artworks…</p>;
-  if (error || !data) return <p className="text-sm text-red-600">Couldn't load artworks.</p>;
+  if (isLoading)
+    return <p className="text-sm text-gray-500">Loading artworks…</p>;
+  if (error || !data)
+    return <p className="text-sm text-red-600">Couldn't load artworks.</p>;
   if (data.items.length === 0) return null; // nothing requested — keep the view clean
 
   const { summary, permissions } = data;
   return (
     <section>
       <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-900">Artwork requests</h4>
+        <h4 className="text-sm font-semibold text-gray-900">
+          Artwork requests
+        </h4>
         <span className="text-xs text-gray-500">
           {summary.withLink} of {summary.total} links shared
         </span>
