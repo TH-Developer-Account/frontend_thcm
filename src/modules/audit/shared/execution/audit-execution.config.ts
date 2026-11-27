@@ -16,6 +16,7 @@ export const AUDIT_EXECUTION_RULES = {
 		 * enforcement must be server-side (capture time vs upload time).
 		 */
 		maxCaptureAgeMs: 5 * 60 * 1000,
+		photosMandatory: false,
 	},
 
 	text: {

@@ -52,6 +52,10 @@ const DealerAuditReportsPage = lazy(
 	() => import("../modules/audit/dealerAudit/pages/DealerAuditReportsPage"),
 );
 
+const DealerAuditDashboardPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/DealerAuditDashboardPage"),
+);
+
 // Checklist templates
 const DealerChecklistLibraryPage = lazy(
 	() => import("../modules/audit/dealerAudit/pages/DealerChecklistLibraryPage"),
@@ -86,8 +90,9 @@ const PageFallback = () => (
 const guarded = (
 	require: keyof DealerAuditPermissions | Array<keyof DealerAuditPermissions>,
 	page: ReactNode,
+	redirectTo?: string,
 ) => (
-	<DealerAuditGuard require={require}>
+	<DealerAuditGuard require={require} redirectTo={redirectTo}>
 		<Suspense fallback={<PageFallback />}>{page}</Suspense>
 	</DealerAuditGuard>
 );
@@ -97,20 +102,24 @@ export default function DealerAuditRoutes() {
 		<Routes>
 			{/* Role landing screens */}
 			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.dashboard)}
+				element={guarded("canView", <DealerAuditDashboardPage />)}
+			/>
+			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.tracker)}
-				element={guarded("canAssignAudit", <AuditTrackerPage />)}
+				element={guarded("canViewTracker", <AuditTrackerPage />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.myAudits)}
-				element={guarded("canView", <MyAuditsPage />)}
+				element={guarded("canViewMyAudits", <MyAuditsPage />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.reviewQueue)}
-				element={guarded("canReview", <ReviewQueuePage mode="reviewer" />)}
+				element={guarded("canViewReviewQueue", <ReviewQueuePage mode="reviewer" />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.approvals)}
-				element={guarded("canApprove", <ReviewQueuePage mode="approver" />)}
+				element={guarded("canViewApprovals", <ReviewQueuePage mode="approver" />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.cycles.create)}
@@ -120,7 +129,11 @@ export default function DealerAuditRoutes() {
 			{/* Audit instances */}
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.list)}
-				element={guarded("canView", <DealerAuditListPage />)}
+				element={guarded(
+					"canViewAllAudits",
+					<DealerAuditListPage />,
+					DEALER_AUDIT_ROUTES.myAudits,
+				)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.create)}
@@ -150,7 +163,7 @@ export default function DealerAuditRoutes() {
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.approval(":auditId"))}
-				element={guarded("canApprove", <ApprovalPage />)}
+				element={guarded("canView", <ApprovalPage />)}
 			/>
 			<Route
 				path={toRelativePath(
@@ -178,7 +191,7 @@ export default function DealerAuditRoutes() {
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.template.list)}
-				element={guarded("canView", <DealerChecklistLibraryPage />)}
+				element={guarded("canViewChecklists", <DealerChecklistLibraryPage />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.template.create)}
@@ -186,14 +199,14 @@ export default function DealerAuditRoutes() {
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.template.view(":templateId"))}
-				element={guarded("canView", <DealerChecklistTemplateViewPage />)}
+				element={guarded("canViewChecklists", <DealerChecklistTemplateViewPage />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.template.edit(":templateId"))}
 				element={guarded("canManageTemplates", <CreateChecklistTemplatePage />)}
 			/>
 
-			{/* TODO: dashboard, dealers and profile routes — add here once their page components are confirmed. */}
+			{/* TODO: dealers and profile routes — add here once their page components are confirmed. */}
 		</Routes>
 	);
 }

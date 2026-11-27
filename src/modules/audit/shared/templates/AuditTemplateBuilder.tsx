@@ -362,17 +362,9 @@ export default function AuditTemplateBuilder({
 	return (
 		<div className="">
 			{notice ? <div className="mb-4">{notice}</div> : null}
-			<StepProgress
-				className="mb-5"
-				steps={AUDIT_TEMPLATE_PROGRESS_STEPS}
-				currentStep={stepIndex + 1}
-				ariaLabel="Template builder progress"
-			/>
 
 			{isReviewStep ? (
-				// Wireframe: group cards and the summary sit on the page, and the
-				// action bar is its own card underneath.
-				<div className="space-y-4">
+				<Card variant="default" padding="compact" footer={footerContent}>
 					<AuditTemplatePreview
 						variant="review"
 						values={collectValues()}
@@ -380,12 +372,19 @@ export default function AuditTemplateBuilder({
 						parameterFields={parameterFields}
 						layout={layout}
 					/>
-					<Card variant="outlined" padding="compact">
-						{footerContent}
-					</Card>
-				</div>
+				</Card>
 			) : (
-				<Card footer={footerContent}>
+				<Card
+					footer={footerContent}
+					title={
+						<StepProgress
+							steps={AUDIT_TEMPLATE_PROGRESS_STEPS}
+							currentStep={stepIndex + 1}
+							ariaLabel="Template builder progress"
+						/>
+					}
+					headerClassName="border-none"
+				>
 					{step === "details" ? (
 						<AuditTemplateDetailsStep
 							form={detailsForm}

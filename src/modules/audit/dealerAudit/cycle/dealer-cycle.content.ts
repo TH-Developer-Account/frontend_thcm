@@ -297,17 +297,17 @@ export const dealerCycleContent = {
 
 	reviewSummary: {
 		title: "Review summary",
-		subtitle: "Check your scores, then send the review for approval.",
+		subtitle: "Check your scores, submit, then generate the report.",
 		scoreChanges: "Items you scored lower than the dealer",
 		noChanges: "You agreed with every dealer score.",
 		clarifications: "Items sent back for clarification",
 		openClarifications:
 			"Items waiting for the dealer must be answered before you can finish.",
-		submit: "Send for approval",
-		confirmTitle: "Send this review for approval?",
-		confirmBody: "You cannot change your scores after this.",
-		confirmAction: "Yes, send",
-		success: "Review sent for approval.",
+		submit: "Submit review",
+		confirmTitle: "Submit this review?",
+		confirmBody: "Next, generate the report and send it for approval.",
+		confirmAction: "Yes, submit review",
+		success: "Review submitted.",
 	},
 
 	approval: {

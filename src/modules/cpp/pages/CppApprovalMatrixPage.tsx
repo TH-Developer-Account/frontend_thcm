@@ -135,6 +135,7 @@ const CoverageBanner = ({
 		<div className="flex flex-col gap-2">
 			{errors.length ? (
 				<Alert
+					type="banner"
 					variant="error"
 					title={`${errors.length} role${errors.length === 1 ? "" : "s"} need a person${plantText(plant)}`}
 					description={`Requests whose chain uses these roles cannot be submitted until they are filled. ${shown.join(" ")}${more}`}
@@ -710,6 +711,7 @@ const ChainTab = ({
 	if (isError || !data)
 		return (
 			<Alert
+				type="banner"
 				variant="error"
 				title="Could not load the workflow chains."
 				primaryAction={{ label: "Retry", onClick: () => void refetch() }}
@@ -774,6 +776,7 @@ const ChainTab = ({
 
 			{data.problems.length ? (
 				<Alert
+					type="banner"
 					variant="warning"
 					title={`${data.problems.length} chain problem(s) reported by the server`}
 					description={data.problems.slice(0, 5).join(" ")}
@@ -784,6 +787,7 @@ const ChainTab = ({
 				<>
 					{tables.empty.length ? (
 						<Alert
+							type="banner"
 							variant="error"
 							title={`This band cannot be submitted${plantText(plant)} yet`}
 							description={`Fill these in Assignments: ${tables.empty.join("; ")}.`}
@@ -1024,6 +1028,7 @@ const CppApprovalMatrixPage = () => {
 						matrixQuery.error,
 						"Unable to load the approval matrix.",
 					)}
+					type="banner"
 					primaryAction={{
 						label: "Retry",
 						onClick: () => void matrixQuery.refetch(),

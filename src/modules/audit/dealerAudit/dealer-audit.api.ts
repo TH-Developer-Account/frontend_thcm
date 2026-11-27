@@ -100,6 +100,10 @@ export const auditPaths = {
 	clarifications: (auditId: string) => `${BASE}/${enc(auditId)}/clarifications`,
 	clarificationResponse: (auditId: string) =>
 		`${BASE}/${enc(auditId)}/clarifications/respond`,
+	generateReport: (auditId: string) =>
+		`${BASE}/${enc(auditId)}/report/generate`,
+	sendForApproval: (auditId: string) =>
+		`${BASE}/${enc(auditId)}/send-for-approval`,
 	approve: (auditId: string) => `${BASE}/${enc(auditId)}/approve`,
 	reject: (auditId: string) => `${BASE}/${enc(auditId)}/reject`,
 	reassign: (auditId: string) => `${BASE}/${enc(auditId)}/reassign`,
@@ -510,7 +514,26 @@ async function rejectAudit(
 	return mapDealerAuditResponse(body.data);
 }
 
+/** Body-less workflow step that returns the updated audit. */
+async function postTransition(
+	operation: string,
+	url: string,
+): Promise<DealerAudit> {
+	const body = await tracked({ operation, method: "POST", url }, () =>
+		ServerAxios.post<ApiEnvelope<DealerAuditResponse>>(url).then((r) => r.data),
+	);
+	return mapDealerAuditResponse(body.data);
+}
+
+const generateReport = (auditId: string) =>
+	postTransition("generateReport", auditPaths.generateReport(auditId));
+
+const sendForApproval = (auditId: string) =>
+	postTransition("sendForApproval", auditPaths.sendForApproval(auditId));
+
 export const dealerAuditApi = {
+	generateReport,
+	sendForApproval,
 	getAudits,
 	getAudit,
 	getChecklist,

@@ -133,6 +133,7 @@ export default function ChecklistLibrary<TFilters extends object>({
 			<Card
 				variant="default"
 				padding="default"
+				headerClassName="border-none pb-3"
 				title={
 					<FilterTabs<TemplateStatusTab>
 						items={TEMPLATE_STATUS_FILTER_TABS}
@@ -144,12 +145,11 @@ export default function ChecklistLibrary<TFilters extends object>({
 					/>
 				}
 				actions={
-					<div className="flex items-center gap-3">
+					<div className="flex flex-row gap-4">
 						<SearchInput
 							value={search}
 							onChange={onSearchChange}
 							placeholder="Search by template name or description"
-							containerClassName="min-w-0 w-full sm:w-80"
 						/>
 						<FilterDropdown<TFilters>
 							filters={filters}

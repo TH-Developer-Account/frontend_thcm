@@ -269,6 +269,38 @@ export function useSubmitReview() {
 	});
 }
 
+export function useGenerateReport() {
+	const queryClient = useQueryClient();
+	const toastSuccess = useSuccessToast();
+
+	return useMutation({
+		mutationFn: (auditId: string) => dealerAuditApi.generateReport(auditId),
+		onSuccess: (audit) => {
+			applyAuditTransition(queryClient, audit);
+			toastSuccess({
+				title: "Report generated",
+				description: "Check it, then send the audit for approval.",
+			});
+		},
+	});
+}
+
+export function useSendForApproval() {
+	const queryClient = useQueryClient();
+	const toastSuccess = useSuccessToast();
+
+	return useMutation({
+		mutationFn: (auditId: string) => dealerAuditApi.sendForApproval(auditId),
+		onSuccess: (audit) => {
+			applyAuditTransition(queryClient, audit);
+			toastSuccess({
+				title: "Sent for approval",
+				description: "The approver has been notified.",
+			});
+		},
+	});
+}
+
 // ── Approver ──────────────────────────────────────────────────────────
 
 export function useApproveAudit() {

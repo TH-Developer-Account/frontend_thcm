@@ -255,6 +255,9 @@ export const mapDealerAuditResponse = (
 	closedAt: response.closed_at ?? null,
 	version: response.version,
 	autoFinalizeAt: response.auto_finalize_at ?? null,
+	reviewSubmitted: response.review_submitted ?? false,
+	reportGeneratedAt: response.report_generated_at ?? null,
+	viewerCanApprove: response.viewer_can_approve ?? false,
 });
 
 export const mapHistoryEntryResponse = (

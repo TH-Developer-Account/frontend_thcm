@@ -1268,7 +1268,7 @@ export function CycleConfirmStep({
 						type="button"
 						text={c.editStep}
 						appearance="standard"
-						variant="transparent"
+						variant="outline"
 						size="sm"
 						onClick={() => onEditStep("REVIEWERS")}
 					/>

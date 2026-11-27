@@ -5,9 +5,11 @@
 // deficiencies the same way.
 
 import { ArrowDown, Camera } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import Card from "../../../../../components/common/Card";
+import { Modal } from "../../../../../components/common/Modal";
+import { ZoomableImage } from "../../../shared/checklist/EvidenceCaptureField";
 import GeoLocationLink from "../../../shared/checklist/GeoLocationLink";
 import ScoreMatrix, {
 	type ScoreMatrixLabels,
@@ -120,6 +122,7 @@ export function EvidenceGallery({
 }: {
 	evidence: readonly AuditItemEvidence[];
 }) {
+	const [preview, setPreview] = useState<AuditItemEvidence | null>(null);
 	if (evidence.length === 0) {
 		return (
 			<p className="flex items-center gap-1.5 text-xs text-fg-secondary">
@@ -129,17 +132,17 @@ export function EvidenceGallery({
 		);
 	}
 	return (
+		<>
 		<ul className="grid gap-3 sm:grid-cols-2">
 			{evidence.map((photo) => (
 				<li
 					key={photo.id}
 					className="space-y-2 rounded-lg border border-line bg-surface p-2"
 				>
-					<a
-						href={photo.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="block overflow-hidden rounded-md"
+					<button
+						type="button"
+						onClick={() => setPreview(photo)}
+						className="block w-full cursor-zoom-in overflow-hidden rounded-md"
 						aria-label={`${text.openPhoto}: ${photo.fileName}`}
 					>
 						<img
@@ -148,7 +151,7 @@ export function EvidenceGallery({
 							loading="lazy"
 							className="h-32 w-full object-cover"
 						/>
-					</a>
+					</button>
 					<GeoLocationLink
 						location={{
 							latitude: photo.latitude,
@@ -161,6 +164,17 @@ export function EvidenceGallery({
 				</li>
 			))}
 		</ul>
+			<Modal
+				open={preview !== null}
+				title={preview?.fileName ?? ""}
+				size="xl"
+				onClose={() => setPreview(null)}
+			>
+				{preview ? (
+					<ZoomableImage src={preview.url} alt={preview.fileName} />
+				) : null}
+			</Modal>
+		</>
 	);
 }
 

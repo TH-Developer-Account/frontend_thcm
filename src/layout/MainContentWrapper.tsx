@@ -12,7 +12,7 @@ import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
 import { guestSidebar } from "../modules/guest/GuestSidebar";
-import { dealerAuditSidebar } from "../modules/audit/dealerAudit/dealerAudit.sidebar";
+import { useDealerAuditSidebar } from "../modules/audit/dealerAudit/dealerAudit.sidebar";
 import Header from "../components/ui/Header";
 import { cppSidebar } from "../modules/cpp/utils/cpp.sidebar";
 
@@ -52,6 +52,8 @@ export default function MainContentWrapper() {
 		getMobileViewportServerSnapshot,
 	);
 
+	const dealerAuditSidebar = useDealerAuditSidebar();
+
 	const sidebarItems = useMemo(() => {
 		const path = location.pathname;
 
@@ -83,7 +85,7 @@ export default function MainContentWrapper() {
 		}
 
 		return [];
-	}, [location.pathname]);
+	}, [location.pathname, dealerAuditSidebar]);
 
 	const filteredSidebar = useSidebarPermissions(sidebarItems);
 

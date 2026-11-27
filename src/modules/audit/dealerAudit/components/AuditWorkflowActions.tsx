@@ -34,6 +34,8 @@ import type {
 import type { AuditValidationResult } from "../../shared/execution/audit-execution.validation";
 import {
 	useApproveAudit,
+	useGenerateReport,
+	useSendForApproval,
 	useRaiseClarification,
 	useReAudit,
 	useReassignReviewer,
@@ -79,6 +81,59 @@ interface AuditWorkflowActionsProps {
 	onOpenReport: () => void;
 	onJumpToItem: (itemId: string) => void;
 	onReAuditCreated: (auditId: string) => void;
+}
+
+/** Shown after the review is submitted: generate the report, then send it. */
+export function ReportApprovalButtons({
+	audit,
+	onSent,
+}: {
+	audit: DealerAudit;
+	onSent?: () => void;
+}) {
+	const generate = useGenerateReport();
+	const send = useSendForApproval();
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+	const hasReport = Boolean(audit.reportGeneratedAt);
+
+	return (
+		<>
+			<Button
+				type="button"
+				text={hasReport ? "Regenerate report" : "Generate report"}
+				Icon={FileText}
+				appearance="standard"
+				variant={hasReport ? "outline" : "brand"}
+				loading={generate.isPending}
+				onClick={() => generate.mutate(audit.id)}
+			/>
+			<Button
+				type="button"
+				text="Send for approval"
+				Icon={Send}
+				appearance="standard"
+				variant="brand"
+				disabled={!hasReport || generate.isPending}
+				onClick={() => setIsConfirmOpen(true)}
+			/>
+			{generate.isError ? (
+				<p className="form-error-text w-full" role="alert">
+					The report could not be generated. Please try again.
+				</p>
+			) : null}
+			<ConfirmActionDialog
+				open={isConfirmOpen}
+				title="Send for approval?"
+				description="The approver will check the report. You cannot change scores while it is with them."
+				confirmText="Send for approval"
+				onClose={() => setIsConfirmOpen(false)}
+				onConfirm={async () => {
+					await send.mutateAsync(audit.id);
+					onSent?.();
+				}}
+			/>
+		</>
+	);
 }
 
 export default function AuditWorkflowActions({
@@ -180,7 +235,11 @@ export default function AuditWorkflowActions({
 					/>
 				) : null}
 
-				{permissions.canSubmitReview ? (
+				{permissions.canSubmitReview && audit.reviewSubmitted ? (
+					<ReportApprovalButtons audit={audit} />
+				) : null}
+
+				{permissions.canSubmitReview && !audit.reviewSubmitted ? (
 					<Button
 						type="button"
 						text={text.submitReview}

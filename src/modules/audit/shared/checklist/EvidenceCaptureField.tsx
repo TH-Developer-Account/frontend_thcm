@@ -22,12 +22,12 @@ import {
 	RefreshCw,
 	Trash2,
 	WifiOff,
+	ZoomIn,
+	ZoomOut,
 } from "lucide-react";
 
 import { Modal } from "../../../../components/common/Modal";
-import {
-	validateUploadFile,
-} from "../../../../components/ui/FileUpload/fileUpload.helpers";
+import { validateUploadFile } from "../../../../components/ui/FileUpload/fileUpload.helpers";
 import { AUDIT_EXECUTION_RULES } from "../execution/audit-execution.config";
 import {
 	auditExecutionContent as content,
@@ -81,7 +81,10 @@ function compressImage(
 		const objectUrl = URL.createObjectURL(file);
 
 		image.onload = () => {
-			const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+			const scale = Math.min(
+				1,
+				maxDimension / Math.max(image.width, image.height),
+			);
 			const canvas = document.createElement("canvas");
 			canvas.width = Math.round(image.width * scale);
 			canvas.height = Math.round(image.height * scale);
@@ -119,6 +122,61 @@ const formatCoordinates = (location: GeoCoordinates): string =>
 	`${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`;
 
 // ── Component ─────────────────────────────────────────────────────────
+
+const ZOOM_STEP = 0.5;
+const MAX_ZOOM = 4;
+const zoomButton =
+	"inline-flex min-h-10 min-w-10 items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 text-xs font-semibold text-slate-700 hover:border-brand hover:text-brand disabled:opacity-50";
+
+/** Photo viewer: +/- buttons or double-click to zoom, scroll or swipe to pan. */
+export function ZoomableImage({ src, alt }: { src: string; alt: string }) {
+	const [zoom, setZoom] = React.useState(1);
+	React.useEffect(() => setZoom(1), [src]);
+	const change = (next: number) =>
+		setZoom(Math.min(MAX_ZOOM, Math.max(1, next)));
+
+	return (
+		<div className="space-y-2" data-no-swipe>
+			<div className="flex items-center justify-end gap-2">
+				<button
+					type="button"
+					className={zoomButton}
+					aria-label="Zoom out"
+					disabled={zoom <= 1}
+					onClick={() => change(zoom - ZOOM_STEP)}
+				>
+					<ZoomOut className="size-4" aria-hidden="true" />
+				</button>
+				<button
+					type="button"
+					className={zoomButton}
+					aria-label="Reset zoom"
+					onClick={() => change(1)}
+				>
+					{Math.round(zoom * 100)}%
+				</button>
+				<button
+					type="button"
+					className={zoomButton}
+					aria-label="Zoom in"
+					disabled={zoom >= MAX_ZOOM}
+					onClick={() => change(zoom + ZOOM_STEP)}
+				>
+					<ZoomIn className="size-4" aria-hidden="true" />
+				</button>
+			</div>
+			<div className="h-[65vh] overflow-auto rounded-lg bg-slate-950">
+				<img
+					src={src}
+					alt={alt}
+					onDoubleClick={() => change(zoom > 1 ? 1 : 2)}
+					className={`max-w-none object-contain ${zoom > 1 ? "cursor-zoom-out" : "cursor-zoom-in"}`}
+					style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}
+				/>
+			</div>
+		</div>
+	);
+}
 
 export interface EvidenceCaptureFieldProps {
 	value: readonly LivePhotoValue[];
@@ -158,8 +216,9 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 
 	const [isCapturing, setIsCapturing] = React.useState(false);
 	const [captureError, setCaptureError] = React.useState<string | null>(null);
-	const [previewPhoto, setPreviewPhoto] =
-		React.useState<LivePhotoValue | null>(null);
+	const [previewPhoto, setPreviewPhoto] = React.useState<LivePhotoValue | null>(
+		null,
+	);
 	const [isOnline, setIsOnline] = React.useState(
 		typeof navigator === "undefined" ? true : navigator.onLine,
 	);
@@ -176,7 +235,9 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 	}, []);
 
 	const canAddMore = value.length < maxFiles;
-	const uploadedCount = value.filter((p) => p.uploadStatus === "UPLOADED").length;
+	const uploadedCount = value.filter(
+		(p) => p.uploadStatus === "UPLOADED",
+	).length;
 	const canCapture = !disabled && !readOnly && canAddMore && !isCapturing;
 	const displayedError = error ?? captureError ?? undefined;
 
@@ -200,7 +261,10 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 		}
 
 		// Best-effort "live capture" check; the server must enforce the real rule.
-		if (Date.now() - file.lastModified > AUDIT_EXECUTION_RULES.evidence.maxCaptureAgeMs) {
+		if (
+			Date.now() - file.lastModified >
+			AUDIT_EXECUTION_RULES.evidence.maxCaptureAgeMs
+		) {
 			setCaptureError(text.notLivePhoto);
 			return;
 		}
@@ -210,9 +274,11 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 		try {
 			// Location is mandatory: no location, no photo.
 			const location = await getCurrentPosition();
-			const blob = await compressImage(file, maxDimension, compressionQuality).catch(
-				() => file,
-			);
+			const blob = await compressImage(
+				file,
+				maxDimension,
+				compressionQuality,
+			).catch(() => file);
 			const name = file.name || `evidence-${Date.now()}.jpg`;
 			const prepared = new File([blob], name, { type: blob.type || file.type });
 
@@ -232,7 +298,9 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 			});
 		} catch (captureFailure) {
 			setCaptureError(
-				captureFailure instanceof Error ? captureFailure.message : text.locationFailed,
+				captureFailure instanceof Error
+					? captureFailure.message
+					: text.locationFailed,
 			);
 		} finally {
 			setIsCapturing(false);
@@ -330,14 +398,16 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 			>
 				{previewPhoto ? (
 					<div className="space-y-3">
-						<img
+						<ZoomableImage
 							src={previewPhoto.url}
 							alt={format(text.photoAlt, { name: previewPhoto.name })}
-							className="max-h-[75vh] w-full rounded-lg bg-black object-contain"
 						/>
 						{previewPhoto.location ? (
 							<p className="flex items-start gap-1.5 text-xs text-fg-secondary">
-								<MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+								<MapPin
+									className="mt-0.5 size-3.5 shrink-0"
+									aria-hidden="true"
+								/>
 								<span className="tabular-nums">
 									{formatCoordinates(previewPhoto.location)} ·{" "}
 									{new Date(previewPhoto.location.capturedAt).toLocaleString()}
@@ -429,12 +499,18 @@ const PhotoCard = React.memo(function PhotoCard({
 			>
 				{isUploading ? (
 					<>
-						<Loader2 className="size-3 animate-spin text-fg-secondary" aria-hidden="true" />
+						<Loader2
+							className="size-3 animate-spin text-fg-secondary"
+							aria-hidden="true"
+						/>
 						<span className="text-fg-secondary">{text.uploading}</span>
 					</>
 				) : isFailed ? (
 					<>
-						<AlertTriangle className="size-3 text-danger-text" aria-hidden="true" />
+						<AlertTriangle
+							className="size-3 text-danger-text"
+							aria-hidden="true"
+						/>
 						<span className="text-danger-text">{text.failed}</span>
 					</>
 				) : isQueued ? (
@@ -444,14 +520,20 @@ const PhotoCard = React.memo(function PhotoCard({
 					</>
 				) : (
 					<>
-						<CheckCircle2 className="size-3 text-positive-text" aria-hidden="true" />
+						<CheckCircle2
+							className="size-3 text-positive-text"
+							aria-hidden="true"
+						/>
 						<span className="text-positive-text">{text.uploaded}</span>
 					</>
 				)}
 			</p>
 
 			{photo.uploadError ? (
-				<p className="mt-0.5 text-xs leading-tight text-danger-text" role="alert">
+				<p
+					className="mt-0.5 text-xs leading-tight text-danger-text"
+					role="alert"
+				>
 					{photo.uploadError}
 				</p>
 			) : null}

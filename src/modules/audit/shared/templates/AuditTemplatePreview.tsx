@@ -628,7 +628,7 @@ export default function AuditTemplatePreview({
 	return (
 		<div className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_300px] ">
 			<div className="space-y-4">
-				<Card variant="outlined" padding="default" className="mb-2">
+				<Card variant="outlined" padding="default">
 					<h2 className="text-base font-semibold text-(--color-text-primary)">
 						{details.name || "Untitled template"}
 					</h2>

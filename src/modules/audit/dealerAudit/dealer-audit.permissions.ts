@@ -53,6 +53,14 @@ export interface DealerAuditPermissions {
 	canViewComments: boolean; // audit messages / approval comments
 	canViewReviewerAssessment: boolean;
 	canViewDealerInfo: boolean;
+
+	// ── Which PAGES the user can open ──
+	canViewMyAudits: boolean;
+	canViewAllAudits: boolean;
+	canViewTracker: boolean;
+	canViewReviewQueue: boolean;
+	canViewApprovals: boolean;
+	canViewChecklists: boolean;
 }
 
 const NO_PERMISSIONS: DealerAuditPermissions = {
@@ -76,6 +84,12 @@ const NO_PERMISSIONS: DealerAuditPermissions = {
 	canViewComments: false,
 	canViewReviewerAssessment: false,
 	canViewDealerInfo: false,
+	canViewMyAudits: false,
+	canViewAllAudits: false,
+	canViewTracker: false,
+	canViewReviewQueue: false,
+	canViewApprovals: false,
+	canViewChecklists: false,
 };
 
 /** Internal staff who may inspect an audit without acting on it. */
@@ -88,6 +102,8 @@ const INTERNAL_VIEWER: DealerAuditPermissions = {
 	canViewReviewerAssessment: true,
 	canViewDealerInfo: true,
 	canDownloadReport: true,
+	canViewAllAudits: true,
+	canViewTracker: true,
 };
 
 const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
@@ -99,6 +115,9 @@ const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
 		canReassignReviewer: true,
 		canManageTemplates: true,
 		canReAudit: true,
+		canViewReviewQueue: true,
+		canViewApprovals: true,
+		canViewChecklists: true,
 	},
 
 	// Dealer: own part only.
@@ -110,6 +129,7 @@ const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
 		canRespondToClarification: true,
 		canViewDealerInfo: true, // their own profile
 		canDownloadReport: true,
+		canViewMyAudits: true,
 	},
 
 	REVIEWER: {
@@ -117,6 +137,7 @@ const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
 		canReview: true,
 		canRaiseClarification: true,
 		canSubmitReview: true,
+		canViewReviewQueue: true,
 	},
 
 	REVIEWER_MANAGER: {
@@ -125,6 +146,7 @@ const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
 		canRaiseClarification: true,
 		canSubmitReview: true,
 		canReassignReviewer: true,
+		canViewReviewQueue: true,
 	},
 
 	APPROVER: {
@@ -132,6 +154,7 @@ const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
 		canRaiseClarification: true, // send back instead of approving
 		canApprove: true,
 		canReject: true,
+		canViewApprovals: true,
 	},
 
 	AUDIT_MANAGER: {
@@ -142,7 +165,8 @@ const ROLE_PERMISSIONS: Record<DealerAuditRole, DealerAuditPermissions> = {
 		canReAudit: true,
 	},
 
-	READ_ONLY: INTERNAL_VIEWER,
+	// Approvers without another grant land here.
+	READ_ONLY: { ...INTERNAL_VIEWER, canViewApprovals: true },
 };
 
 /**
@@ -170,6 +194,10 @@ export interface DealerAuditAccessSubject {
 	dealerId: string;
 	assignedReviewerId: string | null;
 	openClarificationCount: number;
+	/** Reviewer has submitted but not yet sent the audit for approval. */
+	reviewSubmitted?: boolean;
+	/** Server: this user is a pending approver on the current stage. */
+	viewerCanApprove?: boolean;
 }
 
 /**
@@ -197,7 +225,10 @@ export function resolveAuditPermissions(
 		user.userId !== null &&
 		audit.assignedReviewerId !== null &&
 		audit.assignedReviewerId !== user.userId;
-	if (role === "REVIEWER" && isForeignReviewer) return NO_PERMISSIONS;
+	const isApprover = audit.viewerCanApprove === true;
+	if (role === "REVIEWER" && isForeignReviewer && !isApprover) {
+		return NO_PERMISSIONS;
+	}
 
 	const { status } = audit;
 	const noOpenClarifications = audit.openClarificationCount === 0;
@@ -205,7 +236,13 @@ export function resolveAuditPermissions(
 	// 2 ── Terminal audits are read-only. Closed audits can never be edited.
 	const isTerminal = isTerminalAuditStatus(status);
 
-	const canReport = base.canDownloadReport && isReportAvailableStatus(status);
+	// Internal users preview the report before approval; dealers only after.
+	const canPreview =
+		base.canViewReviewerAssessment &&
+		(isAwaitingApprovalStatus(status) ||
+			(status === "UNDER_REVIEW" && audit.reviewSubmitted === true));
+	const canReport =
+		base.canDownloadReport && (isReportAvailableStatus(status) || canPreview);
 
 	const next: DealerAuditPermissions = {
 		...base,
@@ -224,9 +261,12 @@ export function resolveAuditPermissions(
 
 		canReview: base.canReview && !isForeignReviewer && isReviewOpenStatus(status),
 
+		// Only the reviewer asks the dealer, and only while reviewing.
 		canRaiseClarification:
+			base.canReview &&
 			base.canRaiseClarification &&
-			(status === "UNDER_REVIEW" || isAwaitingApprovalStatus(status)),
+			!isForeignReviewer &&
+			status === "UNDER_REVIEW",
 
 		canSubmitReview:
 			base.canSubmitReview &&
@@ -235,9 +275,13 @@ export function resolveAuditPermissions(
 			noOpenClarifications,
 
 		// An open clarification blocks final approval (server rule too).
+		// Who may approve comes from the workflow (viewerCanApprove).
 		canApprove:
-			base.canApprove && isAwaitingApprovalStatus(status) && noOpenClarifications,
-		canReject: base.canReject && isAwaitingApprovalStatus(status),
+			(base.canApprove || isApprover) &&
+			isAwaitingApprovalStatus(status) &&
+			noOpenClarifications,
+		canReject:
+			(base.canReject || isApprover) && isAwaitingApprovalStatus(status),
 
 		canReassignReviewer: base.canReassignReviewer && !isTerminal,
 

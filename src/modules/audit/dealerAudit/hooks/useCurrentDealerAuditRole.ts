@@ -1,14 +1,13 @@
 import { useMemo } from "react";
 import { useAuth } from "../../../../context/Auth/useAuth";
-import {
-	DEALER_AUDIT_APP_KEY,
-	DEALER_AUDIT_MODULES,
-	resolveDealerAuditRole,
-} from "../dealer-audit.access";
+import { resolveDealerAuditRole } from "../dealer-audit.access";
 import type { DealerAuditRole } from "../dealer-audit.types";
 
-// Re-exported so the sidebar can keep importing the keys from here.
-export { DEALER_AUDIT_APP_KEY, DEALER_AUDIT_MODULES };
+// Must match the app/module keys the backend's authorize() checks.
+const APP_KEY = "DEALER_AUDIT";
+const MODULE_ADMIN = "DEALER_AUDIT_ADMIN";
+const MODULE_REVIEW = "DEALER_AUDIT_REVIEW";
+const MODULE_DEALER = "DEALER_AUDIT_DEALER";
 
 export interface CurrentDealerAuditRole {
 	role: DealerAuditRole | undefined;
@@ -27,27 +26,25 @@ export interface CurrentDealerAuditRole {
  * role model. See resolveDealerAuditRole for the mapping rules.
  */
 export function useCurrentDealerAuditRole(): CurrentDealerAuditRole {
-	const { user, isLoading, isSuperAdmin, can, canManageApp } = useAuth();
+	const { user, isLoading, can, canManageApp } = useAuth();
 
-	const userType = user?.userType;
+	const userRole = user?.userType === "DEALER" ? "DEALER" : user?.role;
 	const designation = user?.designation;
 	const userId = user?.id ?? null;
 
-	const role = useMemo(() => {
-		const app = DEALER_AUDIT_APP_KEY;
-		const { admin, review, dealer } = DEALER_AUDIT_MODULES;
-		// A dealer login is always a dealer, whatever else it was granted.
-		const internal = userType !== "DEALER";
-
-		return resolveDealerAuditRole({
-			designation: internal ? designation : undefined,
-			isAppAdmin: internal && (isSuperAdmin || canManageApp(app)),
-			canAdminRead: internal && can("read", app, admin),
-			canAdminWrite: internal && can("write", app, admin),
-			canReview: internal && can("write", app, review),
-			isDealer: can("read", app, dealer) || can("write", app, dealer),
-		});
-	}, [userType, designation, isSuperAdmin, can, canManageApp]);
+	const role = useMemo(
+		() =>
+			resolveDealerAuditRole({
+				userRole,
+				designation,
+				isAppAdmin: canManageApp(APP_KEY),
+				canAdminWrite: can("write", APP_KEY, MODULE_ADMIN),
+				canAdminRead: can("read", APP_KEY, MODULE_ADMIN),
+				canReviewWrite: can("write", APP_KEY, MODULE_REVIEW),
+				canDealerRead: can("read", APP_KEY, MODULE_DEALER),
+			}),
+		[userRole, designation, can, canManageApp],
+	);
 
 	return { role, isLoading, userId, dealerId: null };
 }

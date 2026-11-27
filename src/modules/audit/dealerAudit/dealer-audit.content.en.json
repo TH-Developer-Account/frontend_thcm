@@ -76,7 +76,7 @@
     },
     "reviewSubmitted": {
       "title": "Review submitted",
-      "description": "The review has been sent for approval."
+      "description": "Review submitted. Now generate the report."
     },
     "approved": {
       "title": "Audit approved",
@@ -200,7 +200,7 @@
         "startReviewTitle": "Start review?",
         "startReviewDescription": "You will be able to score each parameter. The dealer's answers stay unchanged.",
         "submitReviewTitle": "Submit review?",
-        "submitReviewDescription": "The review goes to the approver. You cannot change scores afterwards."
+        "submitReviewDescription": "Your scores are saved. Next, generate the report and send it for approval."
       }
     },
     "detail": {

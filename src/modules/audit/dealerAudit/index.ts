@@ -1,7 +1,7 @@
 // Public surface of the Dealer Audit module. Pages are NOT re-exported here
 // so routes can lazy-load them; import them via React.lazy(() => import(...)).
 
-export { dealerAuditSidebar } from "./dealerAudit.sidebar";
+export { useDealerAuditSidebar } from "./dealerAudit.sidebar";
 export { DEALER_AUDIT_ROUTES } from "./dealer-audit.routes";
 export { dealerAuditKeys } from "./dealer-audit.queries";
 export {

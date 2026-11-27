@@ -18,6 +18,7 @@ import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
 import { flattenChecklistItems } from "../../shared/execution/audit-execution.utils";
 import AuditSubmissionSummary from "../../shared/execution/components/AuditSubmissionSummary";
 import { ConfirmActionDialog } from "../components/AuditWorkflowDialogs";
+import { ReportApprovalButtons } from "../components/AuditWorkflowActions";
 import {
 	PageError,
 	PageLoading,
@@ -93,7 +94,7 @@ export default function ReviewSummaryPage() {
 
 	const handleSubmitReview = async (): Promise<void> => {
 		await submitReview.mutateAsync({ auditId: audit.id, version: audit.version });
-		navigate(DEALER_AUDIT_ROUTES.reviewQueue);
+		/* stay on this page */
 	};
 
 	return (
@@ -140,17 +141,35 @@ export default function ReviewSummaryPage() {
 					</Card>
 				) : null}
 
-				<Button
-					type="button"
-					text={text.submit}
-					Icon={Send}
-					appearance="standard"
-					variant="brand"
-					size="xl"
-					fullWidth
-					disabled={!validation.valid || audit.openClarificationCount > 0}
-					onClick={() => setIsConfirmOpen(true)}
-				/>
+				{audit.reviewSubmitted ? (
+					<div className="flex flex-wrap gap-2">
+						<ReportApprovalButtons
+							audit={audit}
+							onSent={() => navigate(DEALER_AUDIT_ROUTES.reviewQueue)}
+						/>
+						<Button
+							type="button"
+							text="View report"
+							appearance="standard"
+							variant="outline"
+							onClick={() =>
+								navigate(DEALER_AUDIT_ROUTES.audits.report(audit.id))
+							}
+						/>
+					</div>
+				) : (
+					<Button
+						type="button"
+						text={text.submit}
+						Icon={Send}
+						appearance="standard"
+						variant="brand"
+						size="xl"
+						fullWidth
+						disabled={!validation.valid || audit.openClarificationCount > 0}
+						onClick={() => setIsConfirmOpen(true)}
+					/>
+				)}
 			</div>
 
 			<ConfirmActionDialog

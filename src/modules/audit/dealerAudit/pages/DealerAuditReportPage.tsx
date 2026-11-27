@@ -35,6 +35,7 @@ import ResendReportDialog from "../cycle/components/ResendReportDialog";
 import { dealerCycleContent as cycleContent } from "../cycle/dealer-cycle.content";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { formatPeriodLabel } from "../dealer-audit.sla";
+import { isReportAvailableStatus } from "../dealer-audit.status";
 import { useAuditPermissions } from "../hooks/useDealerAuditAccess";
 import {
 	useDealerAudit,
@@ -294,7 +295,7 @@ export default function DealerAuditReportPage() {
 						variant="outline"
 						onClick={() => window.print()}
 					/>
-					{canSeeReviewerDetail ? (
+					{canSeeReviewerDetail && isReportAvailableStatus(report.status) ? (
 						<Button
 							type="button"
 							text={cycleContent.reports.resend}

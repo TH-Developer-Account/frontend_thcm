@@ -165,7 +165,10 @@ export const isScoreAllowed = (
 /** Evidence the item requires, honouring the per-parameter configuration. */
 export const getRequiredEvidenceCount = (
 	item: Pick<AuditChecklistItem, "evidenceRequired" | "minEvidenceCount">,
-): number => (item.evidenceRequired ? Math.max(1, item.minEvidenceCount) : 0);
+): number =>
+	AUDIT_EXECUTION_RULES.evidence.photosMandatory && item.evidenceRequired
+		? Math.max(1, item.minEvidenceCount)
+		: 0;
 
 export interface EvidenceLimits {
 	min: number;

@@ -63,8 +63,8 @@ export default function AuditConfirmModal({
 			dialogRole="alertdialog"
 			closeOnOverlayClick={!isConfirming}
 			onClose={handleClose}
-			footer_actions={
-				<>
+			footer_children={
+				<div className="bottom-buttons-bar-between ">
 					<Button
 						text={cancelLabel}
 						variant="outline"
@@ -77,7 +77,7 @@ export default function AuditConfirmModal({
 						loading={isConfirming}
 						onClick={onConfirm}
 					/>
-				</>
+				</div>
 			}
 		>
 			<div className="flex flex-col items-center gap-3 px-2 py-2 text-center">

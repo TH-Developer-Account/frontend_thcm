@@ -263,6 +263,9 @@ export interface DealerAuditResponse extends DealerAuditListItemResponse {
 	version: number;
 	/** When the backend job will finalise the audit with the initial score. */
 	auto_finalize_at: string | null;
+	review_submitted?: boolean;
+	report_generated_at?: string | null;
+	viewer_can_approve?: boolean;
 }
 
 export interface DealerAuditHistoryEntryResponse {
@@ -390,6 +393,9 @@ export interface DealerAudit extends DealerAuditListItem {
 	closedAt: string | null;
 	version: number;
 	autoFinalizeAt: string | null;
+	reviewSubmitted?: boolean;
+	reportGeneratedAt?: string | null;
+	viewerCanApprove?: boolean;
 }
 
 export interface DealerAuditHistoryEntry {

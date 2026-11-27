@@ -5,6 +5,7 @@ import {
 	type DealerAuditPermissions,
 } from "../dealer-audit.permissions";
 import type {
+	DealerAudit,
 	DealerAuditListItem,
 	DealerAuditRole,
 } from "../dealer-audit.types";
@@ -34,10 +35,11 @@ export function useDealerAuditAccess(): DealerAuditPermissions {
 /** Permissions narrowed by scope and the audit's current workflow status. */
 export function useAuditPermissions(
 	audit:
-		| Pick<
+		| (Pick<
 				DealerAuditListItem,
 				"status" | "dealerId" | "assignedReviewer" | "openClarificationCount"
-		  >
+		  > &
+				Partial<Pick<DealerAudit, "reviewSubmitted" | "viewerCanApprove">>)
 		| undefined,
 ): DealerAuditPermissions {
 	const { role, userId, dealerId } = useDealerAuditSession();
@@ -46,6 +48,8 @@ export function useAuditPermissions(
 	const auditDealerId = audit?.dealerId;
 	const assignedReviewerId = audit?.assignedReviewer?.id ?? null;
 	const openClarificationCount = audit?.openClarificationCount ?? 0;
+	const reviewSubmitted = audit?.reviewSubmitted ?? false;
+	const viewerCanApprove = audit?.viewerCanApprove ?? false;
 
 	return useMemo(
 		() =>
@@ -58,6 +62,8 @@ export function useAuditPermissions(
 							dealerId: auditDealerId,
 							assignedReviewerId,
 							openClarificationCount,
+							reviewSubmitted,
+							viewerCanApprove,
 						}
 					: undefined,
 			),
@@ -69,6 +75,8 @@ export function useAuditPermissions(
 			auditDealerId,
 			assignedReviewerId,
 			openClarificationCount,
+			reviewSubmitted,
+			viewerCanApprove,
 		],
 	);
 }
