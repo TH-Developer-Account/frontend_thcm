@@ -136,20 +136,35 @@ export type HandoutDetail = HandoutSummary & {
 /*                         Approval workflow (display)                        */
 /* ========================================================================== */
 
+/** One real person who can act on a stage — name/email/designation only. */
+export type HandoutApprovalWorkflowApprover = {
+  name: string;
+  email: string;
+  designation: string | null;
+};
+
 /**
- * GET /handouts/approval-workflow — Handouts' two fixed roles
- * (HANDOUT_APPROVER_USER_ID / HANDOUT_DELIVERY_USER_ID), resolved to real
- * users for display. Not a WorkflowTemplate stage — Handouts has no
- * workflow-engine template behind it — but shaped close enough to one
- * (stageOrder/stageName + the one real person on it) that it can be fed
- * through the same ApprovalTable component EPC uses.
+ * GET /handouts/approval-workflow.
+ *
+ * The Approval stage (stageOrder 1) is now resolved from the real,
+ * admin-configured WorkflowTemplate behind Handouts (see
+ * handouts.services.ts's getHandoutApprovalWorkflow) — it can carry more
+ * than one approver, with a real ALL/ANY/SOME strategy and minApprovals,
+ * same as any other workflow-engine stage.
+ *
+ * The Delivery stage (stageOrder 2) stays the fixed, environment-configured
+ * HANDOUT_DELIVERY_USER_ID — by design, not promoted into the workflow
+ * engine — so `strategy` is always null there and `approvers` always holds
+ * exactly one entry. Both stages share this one shape so the frontend
+ * mapper/ApprovalTable don't need to special-case either of them.
  */
 export type HandoutApprovalWorkflowStage = {
   stageOrder: number;
   stageName: string;
-  name: string;
-  email: string;
-  designation: string | null;
+  /** null for the Delivery stage — not template-derived, a fixed identity. */
+  strategy: "ALL" | "ANY" | "SOME" | null;
+  minApprovals: number | null;
+  approvers: HandoutApprovalWorkflowApprover[];
 };
 
 export type HandoutApprovalWorkflow = {

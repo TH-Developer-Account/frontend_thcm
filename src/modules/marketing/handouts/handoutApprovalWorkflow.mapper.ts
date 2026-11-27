@@ -1,15 +1,20 @@
 // handouts/handoutApprovalWorkflow.mapper.ts
 //
-// Handouts has no WorkflowTemplate/WorkflowInstance behind it (see
-// handoutsDecision.services.ts: "no WorkflowInstance behind Handouts"), so
-// there is no WorkflowStage[] to run through EPC's own
-// workflows/utils/approvalWorkflow.mapper.ts. GET /handouts/approval-workflow
-// already resolves the two fixed, environment-configured roles to real
-// users on the backend (handouts.services.ts's getHandoutApprovalWorkflow);
-// this file's only job is reshaping that real response into the
-// ApprovalTableRow[] shape the shared ApprovalTable component expects —
-// the same role EPC's mapper plays, scaled down to two fixed stages instead
-// of a template's dynamic ones.
+// The Approval stage is now real WorkflowTemplate data (see
+// handouts.services.ts's getHandoutApprovalWorkflow) — it can have more
+// than one approver, with a real ALL/ANY/SOME strategy — so this mapper no
+// longer hardcodes "one person, one approver, strategy: Single approver"
+// per stage. The Delivery stage stays a fixed single identity by design
+// (not promoted into the workflow engine), which this mapper treats as the
+// 1-approver edge case of the same general logic, rather than as a special
+// case of its own.
+//
+// Reuses the shared strategy-labeling utilities EPC's own
+// workflows/utils/approvalWorkflow.mapper.ts already built
+// (deriveStrategy/getStrategyLabel in workflows/utils/strategy.ts) instead
+// of inventing Handouts-specific wording — a 1-approver stage reads
+// "Sequential" here exactly as it would for any EPC stage, so the shared
+// ApprovalTable component stays the single place that vocabulary lives.
 //
 // Two call sites, two different needs:
 //   - NewHandoutPage's review step previews the flow before anything has
@@ -22,7 +27,15 @@
 //     WorkflowInstance rather than leaving it blank.
 
 import type { ApprovalTableRow } from "../../workflows/types/types";
-import type { HandoutApprovalWorkflow, HandoutStatus } from "./handouts.types";
+import {
+  deriveStrategy,
+  getStrategyLabel,
+} from "../../workflows/utils/strategy";
+import type {
+  HandoutApprovalWorkflow,
+  HandoutApprovalWorkflowApprover,
+  HandoutStatus,
+} from "./handouts.types";
 
 // Reuses EPC's own status tokens ("APPROVED" / "REJECTED" / "CLARIFIED" /
 // "IN_PROGRESS") so the shared ApprovalTable's Badge renders with the same
@@ -54,6 +67,12 @@ const STAGE_STATUS_BY_HANDOUT_STATUS: Record<HandoutStatus, StageStatusPair> = {
   CLOSED: { approval: "APPROVED", delivery: "APPROVED" },
 };
 
+const FALLBACK_APPROVER: HandoutApprovalWorkflowApprover = {
+  name: "--",
+  email: "--",
+  designation: null,
+};
+
 export type MapHandoutApprovalWorkflowOptions = {
   /** Omit for a preview with no status yet (NewHandoutPage's review step). */
   handoutStatus?: HandoutStatus;
@@ -76,33 +95,45 @@ export const mapHandoutApprovalWorkflowToRows = (
         : stageStatus.delivery
       : null;
 
-    // Each stage has exactly one responsible person, reused for both the
-    // row's own display fields and its single approver entry.
-    const person = {
-      name: stage.name,
-      email: stage.email,
-      designation: stage.designation,
+    const totalApprovers = stage.approvers.length;
+    // Delivery's strategy is null (fixed single identity, not
+    // template-derived) — derive the same way a 1-approver template stage
+    // would, so it reads identically rather than needing its own label.
+    const strategy =
+      stage.strategy ?? deriveStrategy(stage.minApprovals ?? 1, totalApprovers);
+    const strategyLabel = getStrategyLabel(strategy, totalApprovers);
+
+    const approvers = stage.approvers.map((approver, index) => ({
+      id: `handout-stage-${stage.stageOrder}-approver-${index}`,
+      name: approver.name,
+      email: approver.email,
+      designation: approver.designation,
+      minApprovals: stage.minApprovals ?? 1,
+      status,
+    }));
+
+    // Row-level singular fields are the collapsed-state / empty-approvers
+    // fallback ApprovalTable renders with — not the primary display once
+    // `approvers` is populated (see ApprovalTable.tsx: it prefers the
+    // approvers list whenever it's non-empty).
+    const primary = approvers[0] ?? {
+      name: FALLBACK_APPROVER.name,
+      email: FALLBACK_APPROVER.email,
+      designation: FALLBACK_APPROVER.designation,
     };
 
     return {
       id: `handout-stage-${stage.stageOrder}`,
       stageOrder: stage.stageOrder,
       stageName: stage.stageName,
-      // Not a template-derived ANY/ALL/SOME rule — one person per stage —
-      // so the label stays fixed rather than computed.
-      strategy: "Single approver",
-      minApprovals: 1,
-      totalApprovers: 1,
+      strategy: strategyLabel,
+      minApprovals: stage.minApprovals ?? totalApprovers,
+      totalApprovers,
       status,
-      ...person,
-      approvers: [
-        {
-          id: `handout-approver-${stage.stageOrder}`,
-          ...person,
-          minApprovals: 1,
-          status,
-        },
-      ],
+      name: primary.name,
+      email: primary.email,
+      designation: primary.designation,
+      approvers,
     };
   });
 };
