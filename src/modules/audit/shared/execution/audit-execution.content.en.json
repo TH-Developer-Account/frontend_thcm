@@ -51,7 +51,10 @@
 		"failed": "Upload failed",
 		"queued": "Waiting to upload",
 		"uploaded": "Uploaded",
-		"retry": "Retry"
+		"retry": "Retry",
+		"openInMaps": "(opens in Google Maps)",
+		"copied": "Copied",
+		"copyCoordinates": "Copy coordinates"
 	},
 	"due": {
 		"notSet": "No due date",

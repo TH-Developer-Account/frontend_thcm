@@ -6,7 +6,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { Alert } from "../../../../components/common/Alert";
 import Card from "../../../../components/common/Card";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
 import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
@@ -24,12 +23,17 @@ import {
 	isChecklistItemComplete,
 	isItemClarificationOpen,
 } from "../../shared/execution/audit-execution.utils";
+import {
+	PageError,
+	PageLoading,
+	PageNoAccess,
+} from "../cycle/components/AuditPageStates";
 import AuditProgressSummary from "../../shared/execution/components/AuditProgressSummary";
 import AuditReminderBanner from "../../shared/execution/components/AuditReminderBanner";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import AuditWorkflowActions from "../components/AuditWorkflowActions";
 import ChecklistItemList from "../../shared/execution/components/ChecklistItemList";
-import { useAuditReminders } from "../hooks/useAuditReminders";
+import { useAuditReminders } from "../hooks/useDealerAudits";
 import {
 	useAuditPermissions,
 	useDealerAuditSession,
@@ -117,28 +121,24 @@ export default function DealerAuditChecklistPage() {
 	if (auditQuery.isLoading || checklistQuery.isLoading) {
 		return (
 			<PageSectionLayout className="audit-page">
-				<p className="text-sm text-fg-secondary" role="status">
-					{text.loading}
-				</p>
+				<PageLoading label={text.loading} />
 			</PageSectionLayout>
 		);
 	}
 
 	if (auditQuery.isError || checklistQuery.isError || !audit) {
-		const error = auditQuery.error ?? checklistQuery.error;
 		return (
 			<PageSectionLayout className="audit-page">
-				<Alert
-					variant="error"
-					type="banner"
+				<PageError
 					title={text.errorTitle}
-					description={getAuditActionErrorMessage(error, "checklist")}
-					primaryAction={{
-						label: text.retry,
-						onClick: () => {
-							void auditQuery.refetch();
-							void checklistQuery.refetch();
-						},
+					retryLabel={text.retry}
+					message={getAuditActionErrorMessage(
+						auditQuery.error ?? checklistQuery.error,
+						"checklist",
+					)}
+					onRetry={() => {
+						void auditQuery.refetch();
+						void checklistQuery.refetch();
 					}}
 				/>
 			</PageSectionLayout>
@@ -148,7 +148,7 @@ export default function DealerAuditChecklistPage() {
 	if (!permissions.canView) {
 		return (
 			<PageSectionLayout className="audit-page">
-				<Alert
+				<PageNoAccess
 					variant="warning"
 					title={text.deniedTitle}
 					description={text.deniedDescription}

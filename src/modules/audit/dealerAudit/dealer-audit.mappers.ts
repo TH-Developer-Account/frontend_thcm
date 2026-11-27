@@ -15,8 +15,6 @@ import { DEALER_AUDIT_RULES } from "./dealer-audit.config";
 import type {
 	ApiPaginatedEnvelope,
 	ChecklistItemFormValues,
-	CreateDealerAuditFormValues,
-	CreateDealerAuditPayload,
 	DealerAudit,
 	DealerAuditChecklist,
 	DealerAuditChecklistItem,
@@ -414,18 +412,6 @@ export const mapReviewFormToPayload = (
 			: null,
 	};
 };
-
-export const mapFormToCreateAuditPayload = (
-	values: CreateDealerAuditFormValues,
-): CreateDealerAuditPayload => ({
-	template_id: values.templateId,
-	dealer_ids: [...values.dealerIds],
-	reviewer_id: values.reviewerId,
-	period_type: values.periodType,
-	period_year: values.year,
-	period_quarter: values.periodType === "YEARLY" ? null : values.quarter,
-	due_date: values.dueDate,
-});
 
 export const mapReassignToPayload = (
 	variables: ReassignReviewerVariables,

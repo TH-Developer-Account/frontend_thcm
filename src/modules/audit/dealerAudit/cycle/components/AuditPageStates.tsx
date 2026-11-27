@@ -4,7 +4,6 @@
 // each page stays focused on its own content.
 
 import { Alert } from "../../../../../components/common/Alert";
-import Button from "../../../../../components/common/Button";
 import { dealerCycleContent as content } from "../dealer-cycle.content";
 
 const text = content.common;
@@ -20,28 +19,40 @@ export function PageLoading({ label }: { label?: string }) {
 export function PageError({
 	message,
 	onRetry,
+	title = text.loadError,
+	retryLabel = text.retry,
 }: {
 	message?: string | null;
 	onRetry: () => void;
+	title?: string;
+	retryLabel?: string;
 }) {
 	return (
 		<Alert
 			variant="error"
 			type="banner"
-			title={text.loadError}
+			title={title}
 			description={message ?? undefined}
-			primaryAction={{ label: text.retry, onClick: onRetry }}
+			primaryAction={{ label: retryLabel, onClick: onRetry }}
 		/>
 	);
 }
 
-export function PageNoAccess() {
+export function PageNoAccess({
+	title = text.noAccess,
+	description = text.noAccessHelp,
+	variant = "info",
+}: {
+	title?: string;
+	description?: string;
+	variant?: "info" | "warning";
+}) {
 	return (
 		<Alert
-			variant="info"
+			variant={variant}
 			type="banner"
-			title={text.noAccess}
-			description={text.noAccessHelp}
+			title={title}
+			description={description}
 		/>
 	);
 }
@@ -52,17 +63,5 @@ export function PageEmpty({ title, help }: { title: string; help?: string }) {
 			<p className="text-base font-semibold text-fg">{title}</p>
 			{help ? <p className="mt-1 text-sm text-fg-secondary">{help}</p> : null}
 		</div>
-	);
-}
-
-export function RetryButton({ onClick }: { onClick: () => void }) {
-	return (
-		<Button
-			type="button"
-			text={text.retry}
-			appearance="standard"
-			variant="outline"
-			onClick={onClick}
-		/>
 	);
 }

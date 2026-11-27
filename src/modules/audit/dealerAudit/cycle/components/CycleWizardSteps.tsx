@@ -55,7 +55,6 @@ const UNASSIGNED_ONLY = "UNASSIGNED";
 const SHOW_ZONE_FILTERS = false;
 
 const FACILITY_SHORT: Record<string, string> = text.facility.short;
-const FACILITY_LONG: Record<string, string> = text.facility.long;
 
 const CELL_HEAD = "px-3 py-2 text-left text-xs font-semibold text-fg-label";
 const CELL = "px-3 py-3 align-middle text-sm text-fg";

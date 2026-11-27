@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 
 import Button from "../../../../../components/common/Button";
 import { formatPercent } from "../../../shared/execution/audit-execution.format";
-import AuditDueLabel from "../../components/AuditDueLabel";
+import { AuditDueLabel } from "../../components/AuditStatusBadge";
 import AuditStatusBadge from "../../components/AuditStatusBadge";
 import { formatPeriodLabel } from "../../dealer-audit.sla";
 import type { DealerAuditListItem } from "../../dealer-audit.types";

@@ -36,8 +36,15 @@ import { dealerCycleContent as content } from "../cycle/dealer-cycle.content";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { formatPeriodLabel } from "../dealer-audit.sla";
 import { useAuditPermissions } from "../hooks/useDealerAuditAccess";
-import { useApproveAudit, useRaiseClarification, useRejectAudit } from "../hooks/useDealerAuditMutations";
-import { useDealerAudit, useDealerAuditChecklist } from "../hooks/useDealerAudits";
+import {
+	useApproveAudit,
+	useRaiseClarification,
+	useRejectAudit,
+} from "../hooks/useDealerAuditMutations";
+import {
+	useDealerAudit,
+	useDealerAuditChecklist,
+} from "../hooks/useDealerAudits";
 
 const text = content.approval;
 const MIN_REASON = 3;
@@ -59,7 +66,10 @@ export default function ApprovalPage() {
 	const [returnReason, setReturnReason] = useState("");
 
 	const sections = checklistQuery.data?.sections;
-	const items = useMemo(() => (sections ? flattenChecklistItems(sections) : []), [sections]);
+	const items = useMemo(
+		() => (sections ? flattenChecklistItems(sections) : []),
+		[sections],
+	);
 
 	const back = (
 		<PageNavigation
@@ -82,7 +92,10 @@ export default function ApprovalPage() {
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				{back}
 				<PageError
-					message={getAuditActionErrorMessage(auditQuery.error ?? checklistQuery.error, "audit")}
+					message={getAuditActionErrorMessage(
+						auditQuery.error ?? checklistQuery.error,
+						"audit",
+					)}
 					onRetry={() => {
 						void auditQuery.refetch();
 						void checklistQuery.refetch();
@@ -100,13 +113,19 @@ export default function ApprovalPage() {
 		);
 	}
 
-	const goBackToQueue = (): void => navigate(DEALER_AUDIT_ROUTES.approvals);
+	const goBackToQueue = (): void => {
+		void navigate(DEALER_AUDIT_ROUTES.approvals);
+	};
 
 	// The error is shown from approve.error; swallowing it here keeps the
 	// bar from throwing an unhandled rejection and keeps the typed reason.
 	const handleApprove = async (reason: string): Promise<void> => {
 		try {
-			await approve.mutateAsync({ auditId: audit.id, version: audit.version, remarks: reason });
+			await approve.mutateAsync({
+				auditId: audit.id,
+				version: audit.version,
+				remarks: reason,
+			});
 			goBackToQueue();
 		} catch {
 			/* surfaced via approve.error */

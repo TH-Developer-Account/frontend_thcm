@@ -51,7 +51,7 @@ import {
 	useSendReminders,
 	useTrackerSummary,
 } from "../cycle/hooks/useDealerCycle";
-import AuditDueLabel from "../components/AuditDueLabel";
+import { AuditDueLabel } from "../components/AuditStatusBadge";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import {
 	ConfirmActionDialog,

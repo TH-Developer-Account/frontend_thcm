@@ -17,7 +17,6 @@ import {
 	type BackendListResponse,
 	type BackendReferencePhoto,
 	type BackendTemplate,
-	type BackendTemplateBody,
 } from "./dealer-template.backend";
 import type {
 	CreateDealerChecklistTemplatePayload,
@@ -83,19 +82,19 @@ export const dealerTemplateApi: DealerTemplateApi = {
 
 	// POST /templates — creates DRAFT v1 (parameters may be empty).
 	createTemplate: async (payload) => {
-		const response = await ServerAxios.post<
-			BackendEnvelope<BackendTemplate>,
-			BackendTemplateBody
-		>(TEMPLATE_BASE_PATH, mapCreatePayloadToBackendBody(payload));
+		const response = await ServerAxios.post<BackendEnvelope<BackendTemplate>>(
+			TEMPLATE_BASE_PATH,
+			mapCreatePayloadToBackendBody(payload),
+		);
 		return mapBackendTemplateToDomain(response.data.data);
 	},
 
 	// PATCH /templates/:id — draft only. 409 when `expectedUpdatedAt` is stale.
 	updateTemplate: async ({ templateId, payload }) => {
-		const response = await ServerAxios.patch<
-			BackendEnvelope<BackendTemplate>,
-			BackendTemplateBody
-		>(templatePath(templateId), mapUpdatePayloadToBackendBody(payload));
+		const response = await ServerAxios.patch<BackendEnvelope<BackendTemplate>>(
+			templatePath(templateId),
+			mapUpdatePayloadToBackendBody(payload),
+		);
 		return mapBackendTemplateToDomain(response.data.data);
 	},
 

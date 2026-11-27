@@ -34,7 +34,7 @@ import AuditTemplatePreview from "../../shared/templates/AuditTemplatePreview";
 import {
 	getTemplateStatusBadgeVariant,
 	getTemplateStatusLabel,
-} from "../../shared/templates/audit-template.status";
+} from "../../shared/templates/audit-template.constants";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { useDealerAuditAccess } from "../hooks/useDealerAuditAccess";
 import { useDealerChecklistTemplate } from "../hooks/useDealerChecklistTemplateEditor";

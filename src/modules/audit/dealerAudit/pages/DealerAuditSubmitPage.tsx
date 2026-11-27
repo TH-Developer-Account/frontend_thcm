@@ -23,12 +23,18 @@ import {
 	PageLoading,
 	PageNoAccess,
 } from "../cycle/components/AuditPageStates";
-import { dealerCycleContent as content, formatCycleMessage as format } from "../cycle/dealer-cycle.content";
+import {
+	dealerCycleContent as content,
+	formatCycleMessage as format,
+} from "../cycle/dealer-cycle.content";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { validateAuditForSubmission } from "../dealer-audit.schemas";
 import { useAuditPermissions } from "../hooks/useDealerAuditAccess";
 import { useSubmitAudit } from "../hooks/useDealerAuditMutations";
-import { useDealerAudit, useDealerAuditChecklist } from "../hooks/useDealerAudits";
+import {
+	useDealerAudit,
+	useDealerAuditChecklist,
+} from "../hooks/useDealerAudits";
 
 const text = content.submit;
 
@@ -42,7 +48,10 @@ export default function DealerAuditSubmitPage() {
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 	const items = useMemo(
-		() => (checklistQuery.data ? flattenChecklistItems(checklistQuery.data.sections) : []),
+		() =>
+			checklistQuery.data
+				? flattenChecklistItems(checklistQuery.data.sections)
+				: [],
 		[checklistQuery.data],
 	);
 	const audit = auditQuery.data;
@@ -56,7 +65,9 @@ export default function DealerAuditSubmitPage() {
 			variant="button"
 			direction="back"
 			ariaLabel="Back"
-			to={auditId ? DEALER_AUDIT_ROUTES.myAudits : DEALER_AUDIT_ROUTES.audits.list}
+			to={
+				auditId ? DEALER_AUDIT_ROUTES.myAudits : DEALER_AUDIT_ROUTES.audits.list
+			}
 		/>
 	);
 
@@ -99,8 +110,9 @@ export default function DealerAuditSubmitPage() {
 		navigate(DEALER_AUDIT_ROUTES.audits.status(audit.id));
 	};
 
-	const jumpToItem = (itemId: string): void =>
-		navigate(DEALER_AUDIT_ROUTES.execution.item(audit.id, itemId));
+	const jumpToItem = (itemId: string): void => {
+		void navigate(DEALER_AUDIT_ROUTES.execution.item(audit.id, itemId));
+	};
 
 	return (
 		<PageSectionLayout className="audit-page audit-page-narrow">
@@ -140,7 +152,9 @@ export default function DealerAuditSubmitPage() {
 					<>
 						<Alert
 							variant="warning"
-							title={format(text.notDone, { count: validation.incompleteCount })}
+							title={format(text.notDone, {
+								count: validation.incompleteCount,
+							})}
 						/>
 						<AuditSubmissionSummary
 							result={validation}

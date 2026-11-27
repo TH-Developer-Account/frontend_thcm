@@ -10,6 +10,13 @@ import { dealerAuditKeys } from "../dealer-audit.queries";
 import { normalizeAuditListParams } from "../dealer-audit.mappers";
 import type { DealerAuditListParams } from "../dealer-audit.types";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
+import { useMemo } from "react";
+import {
+	getAuditReminders,
+	type DealerAuditReminder,
+	type ReminderAudience,
+	type ReminderSubject,
+} from "../dealer-audit.sla";
 
 const MASTER_STALE_MS = DEALER_AUDIT_RULES.list.masterDataStaleTimeMs;
 
@@ -102,4 +109,22 @@ export function useReviewerOptions(enabled = true) {
 		enabled,
 		staleTime: MASTER_STALE_MS,
 	});
+}
+
+/** In-app reminders for the current user (e-mail / push are backend jobs). */
+export function useAuditReminders(
+	audit: ReminderSubject | undefined,
+	audience: ReminderAudience,
+): DealerAuditReminder[] {
+	const status = audit?.status;
+	const dueAt = audit?.dueAt ?? null;
+	const period = audit?.period;
+
+	return useMemo(
+		() =>
+			status && period
+				? getAuditReminders({ status, dueAt, period }, audience, new Date())
+				: [],
+		[audience, dueAt, period, status],
+	);
 }

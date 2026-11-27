@@ -42,6 +42,9 @@ import {
 import type { DealerAuditChecklistItem } from "../dealer-audit.types";
 import { useReviewerOptions } from "../hooks/useDealerAudits";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
+import { dealerCycleContent } from "../cycle/dealer-cycle.content";
+import { parseRecipientList } from "../cycle/dealer-cycle.logic";
+import { useResendReport } from "../cycle/hooks/useDealerCycle";
 
 const text = content.ui.dialogs;
 
@@ -53,7 +56,7 @@ interface DialogBaseProps<TValues> {
 	onSubmit: (values: TValues) => Promise<void>;
 }
 
-function useSubmitState(onClose: () => void) {
+function useSubmitState(onClose: () => void, errorContext = "audit") {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -65,7 +68,7 @@ function useSubmitState(onClose: () => void) {
 			await action();
 			onClose();
 		} catch (error) {
-			setErrorMessage(getAuditActionErrorMessage(error, "audit"));
+			setErrorMessage(getAuditActionErrorMessage(error, errorContext as Parameters<typeof getAuditActionErrorMessage>[1]));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -601,6 +604,81 @@ export function ReAuditDialog({
 						error={errors.dueDate?.message}
 					/>
 				)}
+			/>
+		</DialogFrame>
+	);
+}
+
+// ── Email a report again ──────────────────────────────────────────────
+
+const reportText = dealerCycleContent.reports;
+
+interface ResendReportDialogProps {
+	open: boolean;
+	auditId: string | null;
+	onClose: () => void;
+}
+
+export function ResendReportDialog({
+	open,
+	auditId,
+	onClose,
+}: ResendReportDialogProps) {
+	const { isSubmitting, errorMessage, run, clear } = useSubmitState(
+		onClose,
+		"report",
+	);
+	const resend = useResendReport();
+	const [raw, setRaw] = useState("");
+	const [validationError, setValidationError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (open) {
+			setRaw("");
+			setValidationError(null);
+			clear();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [open]);
+
+	const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+		event.preventDefault();
+		if (!auditId) return;
+		const { emails, invalid } = parseRecipientList(raw);
+		if (emails.length === 0 && invalid.length === 0) {
+			setValidationError(reportText.resendRecipientsRequired);
+			return;
+		}
+		if (invalid.length > 0) {
+			setValidationError(
+				`${reportText.resendRecipientsInvalid} (${invalid.join(", ")})`,
+			);
+			return;
+		}
+		setValidationError(null);
+		void run(async () => {
+			await resend.mutateAsync({ auditId, recipients: emails });
+		});
+	};
+
+	return (
+		<DialogFrame
+			open={open}
+			title={reportText.resendTitle}
+			formId="resend-report-form"
+			submitText={reportText.resend}
+			isSubmitting={isSubmitting}
+			errorMessage={errorMessage}
+			onClose={onClose}
+			onSubmit={handleSubmit}
+		>
+			<TextareaInput
+				label={reportText.resendRecipients}
+				rows={3}
+				value={raw}
+				error={validationError ?? undefined}
+				disabled={isSubmitting}
+				onChange={(event) => setRaw(event.target.value)}
 			/>
 		</DialogFrame>
 	);

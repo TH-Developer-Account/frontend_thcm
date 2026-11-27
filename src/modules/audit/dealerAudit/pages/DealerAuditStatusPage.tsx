@@ -16,7 +16,6 @@ import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigat
 import { StepProgress } from "../../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
-import { formatAuditDateTime } from "../../shared/execution/audit-execution.format";
 import { flattenChecklistItems } from "../../shared/execution/audit-execution.utils";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import { PageError, PageLoading } from "../cycle/components/AuditPageStates";
@@ -24,16 +23,19 @@ import {
 	ScoreChangeList,
 	ScoreOverview,
 } from "../cycle/components/AuditReviewSections";
+import { AuditLogSection } from "../../../../components/ui/audit";
 import { dealerCycleContent as content } from "../cycle/dealer-cycle.content";
 import { getAuditProgressStep } from "../cycle/dealer-cycle.logic";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { formatPeriodLabel } from "../dealer-audit.sla";
-import { isReportAvailableStatus } from "../dealer-audit.status";
+import {
+	DEALER_AUDIT_ACTION_MESSAGES,
+	isReportAvailableStatus,
+} from "../dealer-audit.status";
 import { useAuditPermissions } from "../hooks/useDealerAuditAccess";
 import {
 	useDealerAudit,
 	useDealerAuditChecklist,
-	useDealerAuditHistory,
 } from "../hooks/useDealerAudits";
 
 const text = content.status;
@@ -45,11 +47,13 @@ export default function DealerAuditStatusPage() {
 	const audit = auditQuery.data;
 	const permissions = useAuditPermissions(audit);
 	const checklistQuery = useDealerAuditChecklist(auditId);
-	const historyQuery = useDealerAuditHistory(auditId, permissions.canViewHistory);
 
 	const showReviewer = permissions.canViewReviewerAssessment;
 	const sections = checklistQuery.data?.sections;
-	const items = useMemo(() => (sections ? flattenChecklistItems(sections) : []), [sections]);
+	const items = useMemo(
+		() => (sections ? flattenChecklistItems(sections) : []),
+		[sections],
+	);
 
 	const back = (
 		<PageNavigation
@@ -99,21 +103,28 @@ export default function DealerAuditStatusPage() {
 							</p>
 							<AuditStatusBadge status={audit.status} />
 						</div>
-						{isReportAvailableStatus(audit.status) && permissions.canDownloadReport ? (
+						{isReportAvailableStatus(audit.status) &&
+						permissions.canDownloadReport ? (
 							<Button
 								type="button"
 								text={text.viewReport}
 								Icon={FileText}
 								appearance="standard"
 								variant="brand"
-								onClick={() => navigate(DEALER_AUDIT_ROUTES.audits.report(audit.id))}
+								onClick={() =>
+									navigate(DEALER_AUDIT_ROUTES.audits.report(audit.id))
+								}
 							/>
 						) : null}
 					</div>
 
 					{step > 0 ? (
 						<div className="mt-4">
-							<StepProgress steps={steps} currentStep={step} ariaLabel={text.stepsAria} />
+							<StepProgress
+								steps={steps}
+								currentStep={step}
+								ariaLabel={text.stepsAria}
+							/>
 						</div>
 					) : null}
 
@@ -121,7 +132,9 @@ export default function DealerAuditStatusPage() {
 						<p className="text-xs font-semibold uppercase tracking-wide text-accent-text">
 							{text.nextStep}
 						</p>
-						<p className="mt-1 text-base text-fg">{text.next[audit.status] ?? ""}</p>
+						<p className="mt-1 text-base text-fg">
+							{text.next[audit.status] ?? ""}
+						</p>
 					</div>
 				</Card>
 
@@ -134,26 +147,19 @@ export default function DealerAuditStatusPage() {
 					/>
 				) : null}
 
-				{showReviewer && items.length > 0 ? <ScoreChangeList items={items} /> : null}
+				{showReviewer && items.length > 0 ? (
+					<ScoreChangeList items={items} />
+				) : null}
 
-				{permissions.canViewHistory && historyQuery.data && historyQuery.data.length > 0 ? (
+				{permissions.canViewHistory ? (
 					<Card variant="outlined" title={text.timeline} padding="compact">
-						<ol className="space-y-3">
-							{historyQuery.data.map((entry) => (
-								<li key={entry.id} className="border-l-2 border-line-strong pl-3">
-									<p className="text-sm font-medium text-fg">
-										{entry.actorName}
-										{entry.actorRole ? ` · ${entry.actorRole}` : ""}
-									</p>
-									<p className="text-xs text-fg-secondary">
-										{formatAuditDateTime(entry.occurredAt)}
-									</p>
-									{entry.comment ? (
-										<p className="mt-1 break-words text-sm text-fg">{entry.comment}</p>
-									) : null}
-								</li>
-							))}
-						</ol>
+						<AuditLogSection
+							subjectType="DEALER_AUDIT_INSTANCE"
+							subjectId={audit.id}
+							entityName="dealer audit"
+							actionMessages={DEALER_AUDIT_ACTION_MESSAGES}
+							refreshKey={audit.status}
+						/>
 					</Card>
 				) : null}
 			</div>

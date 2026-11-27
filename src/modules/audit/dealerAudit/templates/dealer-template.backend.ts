@@ -97,7 +97,9 @@ export interface BackendReferencePhoto {
 
 // ── Response → domain ─────────────────────────────────────────────────
 
-const mapParameter = (parameter: BackendParameter): DealerChecklistParameter => ({
+const mapParameter = (
+	parameter: BackendParameter,
+): DealerChecklistParameter => ({
 	id: parameter.id,
 	sequence: parameter.order,
 	title: parameter.title,
@@ -138,7 +140,9 @@ export const mapBackendTemplateToDomain = (
 		.map(mapParameter),
 });
 
-const mapListItem = (item: BackendListItem): DealerChecklistTemplateListItem => ({
+const mapListItem = (
+	item: BackendListItem,
+): DealerChecklistTemplateListItem => ({
 	id: item.id,
 	name: item.name,
 	description: item.description ?? "",

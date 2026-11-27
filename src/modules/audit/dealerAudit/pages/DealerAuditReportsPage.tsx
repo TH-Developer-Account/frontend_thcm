@@ -19,7 +19,7 @@ import {
 	PageError,
 	PageLoading,
 } from "../cycle/components/AuditPageStates";
-import ResendReportDialog from "../cycle/components/ResendReportDialog";
+import { ResendReportDialog } from "../components/AuditWorkflowDialogs";
 import { dealerCycleContent as content } from "../cycle/dealer-cycle.content";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import type {

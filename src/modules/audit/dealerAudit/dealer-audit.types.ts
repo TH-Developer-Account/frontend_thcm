@@ -483,16 +483,6 @@ export interface CreateDealerAuditFormValues {
 
 // ── Request payloads (snake_case) ─────────────────────────────────────
 
-export interface CreateDealerAuditPayload {
-	template_id: string;
-	dealer_ids: string[];
-	reviewer_id: string;
-	period_type: DealerAuditPeriodType;
-	period_year: number;
-	period_quarter: DealerAuditQuarter | null;
-	due_date: string;
-}
-
 export interface SaveAuditItemPayload {
 	score: number | null;
 	remarks: string;

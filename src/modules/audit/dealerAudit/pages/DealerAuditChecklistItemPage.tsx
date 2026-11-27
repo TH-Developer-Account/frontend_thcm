@@ -13,7 +13,6 @@ import { Check, ChevronRight } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { Alert } from "../../../../components/common/Alert";
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
@@ -37,10 +36,14 @@ import {
 	isItemClarificationOpen,
 	type ChecklistProgress,
 } from "../../shared/execution/audit-execution.utils";
+import {
+	PageError,
+	PageLoading,
+	PageNoAccess,
+} from "../cycle/components/AuditPageStates";
 import ChecklistItemShell, {
 	type ItemNavigationTarget,
 } from "../../shared/execution/components/ChecklistItemShell";
-import DealerClarificationPanel from "../components/DealerClarificationPanel";
 import SelfAssessmentAnswerPanel from "../../shared/execution/components/SelfAssessmentAnswerPanel";
 import ReviewItemForm from "../../shared/execution/components/ReviewItemForm";
 import ReviewResultPanel from "../../shared/execution/components/ReviewResultPanel";
@@ -55,6 +58,8 @@ import { useChecklistItemDraft } from "../hooks/useChecklistItemDraft";
 import { useEvidenceUploader } from "../hooks/useEvidenceUploader";
 import { useReviewItemDraft } from "../hooks/useReviewItemDraft";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
+import ItemClarificationPanel from "../../shared/execution/components/ItemClarificationPanel";
+import { useRespondToClarification } from "../hooks/useDealerAuditMutations";
 
 const text = content.ui.itemPage;
 
@@ -98,6 +103,45 @@ function useItemNavigation(
 	);
 
 	return { goTo };
+}
+
+// ── Clarification (connects the shared panel to the API) ──────────────
+
+interface DealerClarificationPanelProps {
+	auditId: string;
+	item: DealerAuditChecklistItem;
+	/** permissions.canRespondToClarification */
+	canRespond: boolean;
+}
+
+function DealerClarificationPanel({
+	auditId,
+	item,
+	canRespond,
+}: DealerClarificationPanelProps) {
+	const {
+		mutateAsync: respond,
+		isPending,
+		error,
+		reset: resetError,
+	} = useRespondToClarification();
+
+	return (
+		<ItemClarificationPanel
+			item={item}
+			canRespond={canRespond}
+			isSubmitting={isPending}
+			errorMessage={
+				error ? getAuditActionErrorMessage(error, "clarification") : null
+			}
+			onResetError={resetError}
+			onRespond={async (response) => {
+				await respond({ auditId, itemId: item.id, response }).catch(
+					() => undefined,
+				);
+			}}
+		/>
+	);
 }
 
 // ── Dealer self-assessment ────────────────────────────────────────────
@@ -164,7 +208,10 @@ function SelfWorkspace({
 				editable ? (
 					<div className="space-y-1">
 						{draft.isUploading ? (
-							<p className="text-xs font-medium text-fg-secondary" role="status">
+							<p
+								className="text-xs font-medium text-fg-secondary"
+								role="status"
+							>
 								{text.uploadingHint}
 							</p>
 						) : null}
@@ -407,9 +454,7 @@ export default function DealerAuditChecklistItemPage() {
 	if (auditQuery.isLoading || checklistQuery.isLoading) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
-				<p className="text-sm text-fg-secondary" role="status">
-					{text.loading}
-				</p>
+				<PageLoading label={text.loading} />
 			</PageSectionLayout>
 		);
 	}
@@ -417,20 +462,16 @@ export default function DealerAuditChecklistItemPage() {
 	if (auditQuery.isError || checklistQuery.isError || !audit) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
-				<Alert
-					variant="error"
-					type="banner"
+				<PageError
 					title={text.errorTitle}
-					description={getAuditActionErrorMessage(
+					retryLabel={text.retry}
+					message={getAuditActionErrorMessage(
 						auditQuery.error ?? checklistQuery.error,
 						"parameter",
 					)}
-					primaryAction={{
-						label: text.retry,
-						onClick: () => {
-							void auditQuery.refetch();
-							void checklistQuery.refetch();
-						},
+					onRetry={() => {
+						void auditQuery.refetch();
+						void checklistQuery.refetch();
 					}}
 				/>
 			</PageSectionLayout>
@@ -440,7 +481,7 @@ export default function DealerAuditChecklistItemPage() {
 	if (!permissions.canView) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
-				<Alert
+				<PageNoAccess
 					variant="warning"
 					title={text.deniedTitle}
 					description={text.deniedDescription}

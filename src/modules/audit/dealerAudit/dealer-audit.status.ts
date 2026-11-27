@@ -113,7 +113,12 @@ export const ALLOWED_AUDIT_TRANSITIONS: Record<
 	RESUBMITTED: ["UNDER_REVIEW", "CLOSED"],
 	// CLOSED is reserved for the system quarter-end auto-finalisation
 	// (dealer's initial score becomes final); no user action does this.
-	PENDING_APPROVAL: ["APPROVED", "CLARIFICATION_REQUIRED", "REJECTED", "CLOSED"],
+	PENDING_APPROVAL: [
+		"APPROVED",
+		"CLARIFICATION_REQUIRED",
+		"REJECTED",
+		"CLOSED",
+	],
 	APPROVED: ["CLOSED"],
 	IMPROVEMENT_REQUIRED: ["CLOSED"],
 	CLOSED: [],
@@ -139,13 +144,11 @@ export const isSelfAssessmentOpenStatus = (
 
 /** Dealer may edit ONLY the items the reviewer flagged. */
 export const isClarificationStatus = (status: DealerAuditStatus): boolean =>
-	status === "CLARIFICATION_REQUIRED" ||
-	status === "RECTIFICATION_IN_PROGRESS";
+	status === "CLARIFICATION_REQUIRED" || status === "RECTIFICATION_IN_PROGRESS";
 
 /** Dealer can (re)submit the self-assessment. */
-export const isDealerSubmittableStatus = (
-	status: DealerAuditStatus,
-): boolean => isSelfAssessmentOpenStatus(status) || isClarificationStatus(status);
+export const isDealerSubmittableStatus = (status: DealerAuditStatus): boolean =>
+	isSelfAssessmentOpenStatus(status) || isClarificationStatus(status);
 
 /** Reviewer may start or continue scoring. */
 export const isReviewOpenStatus = (status: DealerAuditStatus): boolean =>
@@ -153,9 +156,8 @@ export const isReviewOpenStatus = (status: DealerAuditStatus): boolean =>
 	status === "UNDER_REVIEW" ||
 	status === "RESUBMITTED";
 
-export const isAwaitingApprovalStatus = (
-	status: DealerAuditStatus,
-): boolean => status === "PENDING_APPROVAL";
+export const isAwaitingApprovalStatus = (status: DealerAuditStatus): boolean =>
+	status === "PENDING_APPROVAL";
 
 /** A final score exists and the report can be produced. */
 export const isReportAvailableStatus = (status: DealerAuditStatus): boolean =>
@@ -191,3 +193,13 @@ export const AUDIT_STATUS_FILTER_ORDER: readonly DealerAuditStatus[] = [
 	"EXPIRED",
 	"CANCELLED",
 ];
+
+/** Activity log wording for the backend's dealer audit actions. */
+export const DEALER_AUDIT_ACTION_MESSAGES: Record<string, string> = {
+	DEALER_AUDIT_SUBMITTED: "Submitted",
+	DEALER_AUDIT_RESUBMITTED: "Resubmitted",
+	DEALER_AUDIT_EVIDENCE_UPLOADED: "Uploaded evidence",
+	DEALER_AUDIT_REVIEWER_NOTES_SET: "Added reviewer notes",
+	DEALER_AUDIT_REVIEW_STATUS_SET: "Updated review decision",
+	DEALER_AUDIT_REPORT_SENT: "Sent the report",
+};

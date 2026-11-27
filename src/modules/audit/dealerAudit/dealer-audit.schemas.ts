@@ -14,7 +14,10 @@ import {
 	formatDealerAuditMessage as format,
 } from "./dealer-audit.content";
 import { isClarificationStatus } from "./dealer-audit.status";
-import type { DealerAuditChecklistItem, DealerAuditStatus } from "./dealer-audit.types";
+import type {
+	DealerAuditChecklistItem,
+	DealerAuditStatus,
+} from "./dealer-audit.types";
 import {
 	validateItemsForReviewSubmission,
 	validateItemsForSelfSubmission,
@@ -59,39 +62,6 @@ const todayIso = (now: Date): string => {
 	return `${now.getFullYear()}-${month}-${day}`;
 };
 
-export const createDealerAuditSchema = (now: Date = new Date()) =>
-	z
-		.object({
-			templateId: z.string().min(1, msg.templateRequired),
-			dealerIds: z.array(z.string()).min(1, msg.dealersRequired),
-			reviewerId: z.string().min(1, msg.reviewerRequired),
-			periodType: z.enum(["QUARTERLY", "YEARLY"]),
-			year: z.number().int(),
-			quarter: z
-				.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
-				.nullable(),
-			dueDate: dateString,
-		})
-		.superRefine((values, ctx) => {
-			if (values.periodType === "QUARTERLY" && values.quarter === null) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["quarter"],
-					message: msg.quarterRequired,
-				});
-			}
-			if (
-				/^\d{4}-\d{2}-\d{2}$/.test(values.dueDate) &&
-				values.dueDate < todayIso(now)
-			) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["dueDate"],
-					message: msg.dueDatePast,
-				});
-			}
-		});
-
 export const raiseClarificationSchema = z.object({
 	itemIds: z.array(z.string()).min(1, msg.clarificationItemsRequired),
 	remarks: requiredText(
@@ -106,7 +76,10 @@ export const approveAuditSchema = z.object({
 	remarks: z
 		.string()
 		.trim()
-		.max(text.reasonMaxLength, format(msg.reasonTooLong, { max: text.reasonMaxLength })),
+		.max(
+			text.reasonMaxLength,
+			format(msg.reasonTooLong, { max: text.reasonMaxLength }),
+		),
 });
 
 export const rejectAuditSchema = z.object({
@@ -122,8 +95,14 @@ export const reassignReviewerSchema = z.object({
 	reason: z
 		.string()
 		.trim()
-		.min(text.reasonMinLength, format(msg.reasonTooShort, { min: text.reasonMinLength }))
-		.max(text.reasonMaxLength, format(msg.reasonTooLong, { max: text.reasonMaxLength })),
+		.min(
+			text.reasonMinLength,
+			format(msg.reasonTooShort, { min: text.reasonMinLength }),
+		)
+		.max(
+			text.reasonMaxLength,
+			format(msg.reasonTooLong, { max: text.reasonMaxLength }),
+		),
 });
 
 export const reAuditSchema = (now: Date = new Date()) =>
@@ -132,8 +111,14 @@ export const reAuditSchema = (now: Date = new Date()) =>
 			reason: z
 				.string()
 				.trim()
-				.min(text.reasonMinLength, format(msg.reasonTooShort, { min: text.reasonMinLength }))
-				.max(text.reasonMaxLength, format(msg.reasonTooLong, { max: text.reasonMaxLength })),
+				.min(
+					text.reasonMinLength,
+					format(msg.reasonTooShort, { min: text.reasonMinLength }),
+				)
+				.max(
+					text.reasonMaxLength,
+					format(msg.reasonTooLong, { max: text.reasonMaxLength }),
+				),
 			dueDate: dateString,
 		})
 		.superRefine((values, ctx) => {
@@ -149,7 +134,9 @@ export const reAuditSchema = (now: Date = new Date()) =>
 			}
 		});
 
-export type RaiseClarificationFormValues = z.infer<typeof raiseClarificationSchema>;
+export type RaiseClarificationFormValues = z.infer<
+	typeof raiseClarificationSchema
+>;
 export type ApproveAuditFormValues = z.infer<typeof approveAuditSchema>;
 export type RejectAuditFormValues = z.infer<typeof rejectAuditSchema>;
 export type ReassignReviewerFormValues = z.infer<typeof reassignReviewerSchema>;

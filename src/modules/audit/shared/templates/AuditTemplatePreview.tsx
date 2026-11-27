@@ -1,19 +1,4 @@
 // modules/audit/shared/templates/AuditTemplatePreview.tsx
-//
-// Read-only rendering of a template. Used by the builder's Review step
-// and by the template View page.
-//
-// layout "sections" → one card per section (1.1, 1.2 …).
-// layout "flat"     → one card per value of the first parameter field
-//                     (Function for Dealer Audit), numbered 1, 2, 3 …
-//
-// variant "view"               → expandable section cards (admin View page):
-//                                search, expand/collapse all, every line item
-//                                expands to its criteria, scoring and
-//                                reference photo.
-// variant "review"             → compact numbered rows + summary card, as in
-//                                the wireframe (builder Review & publish).
-// variant "detailed" (default) → full rubric with score tables, always open.
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Camera, ChevronRight, ImageOff } from "lucide-react";
@@ -38,7 +23,7 @@ import {
 	sortScoreLevels,
 } from "./audit-template.utils";
 
-export type AuditTemplatePreviewVariant = "detailed" | "review" | "view";
+export type AuditTemplatePreviewVariant = "review" | "view";
 
 /** Saved parameter id (serverId) → reference photo URL. */
 export type AuditTemplateReferencePhotos = Readonly<
@@ -51,7 +36,7 @@ type Props = {
 	parameterFields: readonly AuditTemplateFieldConfig[];
 	layout?: AuditTemplateLayout;
 	summaryTitle?: string;
-	variant?: AuditTemplatePreviewVariant;
+	variant: AuditTemplatePreviewVariant;
 	/** Only used by the "view" variant. */
 	referencePhotos?: AuditTemplateReferencePhotos;
 };
@@ -477,14 +462,7 @@ function AuditTemplateViewLayout({
 		id: block.id,
 		title: block.title,
 		subtitle: pluralize(block.items.length, "item"),
-		// actions: (
-		// 	<ClipboardList
-		// 		size={18}
-		// 		className="ui-template-view-section-icon"
-		// 		aria-hidden="true"
-		// 	/>
-		// ),
-		// First group open by default; every match open while searching.
+
 		defaultExpanded: isSearching || index === 0,
 		bodyClassName: "ui-template-view-section-body",
 		children: (
@@ -563,7 +541,7 @@ export default function AuditTemplatePreview({
 	parameterFields,
 	layout = "sections",
 	summaryTitle = "Final summary",
-	variant = "detailed",
+	variant,
 	referencePhotos,
 }: Props) {
 	const { details, sections } = values;

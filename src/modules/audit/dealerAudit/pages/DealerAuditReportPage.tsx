@@ -17,6 +17,7 @@ import { useParams } from "react-router-dom";
 import { Alert } from "../../../../components/common/Alert";
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
+import { AuditLogSection } from "../../../../components/ui/audit";
 import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import {
@@ -29,18 +30,25 @@ import {
 	formatPercent,
 } from "../../shared/execution/audit-execution.format";
 import { flattenChecklistItems } from "../../shared/execution/audit-execution.utils";
+import {
+	PageError,
+	PageLoading,
+	PageNoAccess,
+} from "../cycle/components/AuditPageStates";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import { DeficiencyList } from "../cycle/components/AuditReviewSections";
-import ResendReportDialog from "../cycle/components/ResendReportDialog";
+import { ResendReportDialog } from "../components/AuditWorkflowDialogs";
 import { dealerCycleContent as cycleContent } from "../cycle/dealer-cycle.content";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { formatPeriodLabel } from "../dealer-audit.sla";
-import { isReportAvailableStatus } from "../dealer-audit.status";
+import {
+	DEALER_AUDIT_ACTION_MESSAGES,
+	isReportAvailableStatus,
+} from "../dealer-audit.status";
 import { useAuditPermissions } from "../hooks/useDealerAuditAccess";
 import {
 	useDealerAudit,
 	useDealerAuditChecklist,
-	useDealerAuditHistory,
 	useDealerAuditReport,
 } from "../hooks/useDealerAudits";
 
@@ -58,10 +66,6 @@ export default function DealerAuditReportPage() {
 		permissions.canDownloadReport,
 	);
 	const checklistQuery = useDealerAuditChecklist(auditId);
-	const historyQuery = useDealerAuditHistory(
-		auditId,
-		permissions.canViewHistory,
-	);
 	const [isResendOpen, setIsResendOpen] = useState(false);
 	const report = reportQuery.data;
 
@@ -92,9 +96,7 @@ export default function DealerAuditReportPage() {
 	) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
-				<p className="text-sm text-fg-secondary" role="status">
-					{text.loading}
-				</p>
+				<PageLoading label={text.loading} />
 			</PageSectionLayout>
 		);
 	}
@@ -103,20 +105,16 @@ export default function DealerAuditReportPage() {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				{back}
-				<Alert
-					variant="error"
+				<PageError
 					title={text.errorTitle}
-					type="banner"
-					description={getAuditActionErrorMessage(
+					retryLabel={text.retry}
+					message={getAuditActionErrorMessage(
 						auditQuery.error ?? reportQuery.error,
 						"report",
 					)}
-					primaryAction={{
-						label: text.retry,
-						onClick: () => {
-							void auditQuery.refetch();
-							void reportQuery.refetch();
-						},
+					onRetry={() => {
+						void auditQuery.refetch();
+						void reportQuery.refetch();
 					}}
 				/>
 			</PageSectionLayout>
@@ -127,8 +125,7 @@ export default function DealerAuditReportPage() {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				{back}
-				<Alert
-					variant="info"
+				<PageNoAccess
 					title={text.unavailableTitle}
 					description={text.unavailableDescription}
 				/>
@@ -203,10 +200,16 @@ export default function DealerAuditReportPage() {
 									<th scope="col" className="px-3 py-2 font-semibold">
 										{text.section}
 									</th>
-									<th scope="col" className="px-3 py-2 text-right font-semibold">
+									<th
+										scope="col"
+										className="px-3 py-2 text-right font-semibold"
+									>
 										{text.score}
 									</th>
-									<th scope="col" className="px-3 py-2 text-right font-semibold">
+									<th
+										scope="col"
+										className="px-3 py-2 text-right font-semibold"
+									>
 										{text.percent}
 									</th>
 								</tr>
@@ -251,32 +254,19 @@ export default function DealerAuditReportPage() {
 					/>
 				)}
 
-				{permissions.canViewHistory &&
-				historyQuery.data &&
-				historyQuery.data.length > 0 ? (
+				{permissions.canViewHistory ? (
 					<Card
 						variant="outlined"
 						title={cycleContent.reports.auditTrail}
 						padding="compact"
 					>
-						<ol className="space-y-3">
-							{historyQuery.data.map((entry) => (
-								<li key={entry.id} className="border-l-2 border-line-strong pl-3">
-									<p className="text-sm font-medium text-fg">
-										{entry.actorName}
-										{entry.actorRole ? ` · ${entry.actorRole}` : ""}
-									</p>
-									<p className="text-xs text-fg-secondary">
-										{formatAuditDateTime(entry.occurredAt)}
-									</p>
-									{entry.comment ? (
-										<p className="mt-1 break-words text-sm text-fg">
-											{entry.comment}
-										</p>
-									) : null}
-								</li>
-							))}
-						</ol>
+						<AuditLogSection
+							subjectType="DEALER_AUDIT_INSTANCE"
+							subjectId={report.auditId}
+							entityName="dealer audit"
+							actionMessages={DEALER_AUDIT_ACTION_MESSAGES}
+							refreshKey={report.status}
+						/>
 					</Card>
 				) : null}
 

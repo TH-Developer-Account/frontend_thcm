@@ -10,6 +10,8 @@ import {
 	getAuditStatusTone,
 } from "../dealer-audit.status";
 import type { DealerAuditStatus } from "../dealer-audit.types";
+import DueDateLabel from "../../shared/execution/components/DueDateLabel";
+import { computeSlaState, getCalendarDaysUntil } from "../dealer-audit.sla";
 
 interface AuditStatusBadgeProps {
 	status: DealerAuditStatus;
@@ -22,6 +24,22 @@ export default function AuditStatusBadge({ status }: AuditStatusBadgeProps) {
 			tone={getAuditStatusTone(status)}
 			badgeVariant={getAuditStatusBadgeVariant(status)}
 			status={status}
+		/>
+	);
+}
+
+interface AuditDueLabelProps {
+	status: DealerAuditStatus;
+	dueAt: string | null;
+}
+
+export function AuditDueLabel({ status, dueAt }: AuditDueLabelProps) {
+	const now = new Date();
+	return (
+		<DueDateLabel
+			dueAt={dueAt}
+			slaState={computeSlaState(status, dueAt, now)}
+			daysUntilDue={getCalendarDaysUntil(dueAt, now)}
 		/>
 	);
 }

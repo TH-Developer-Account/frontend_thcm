@@ -20,7 +20,6 @@ import {
 	mapDealerAuditResponse,
 	mapDealerOptionResponse,
 	mapEvidenceResponse,
-	mapFormToCreateAuditPayload,
 	mapFormToSaveItemPayload,
 	mapHistoryEntryResponse,
 	mapPhotoToUploadMeta,
@@ -39,7 +38,6 @@ import type {
 	ApproveAuditPayload,
 	ApproveAuditVariables,
 	AuditVersionVariables,
-	CreateDealerAuditFormValues,
 	DealerAudit,
 	DealerAuditChecklist,
 	DealerAuditChecklistItem,
@@ -252,26 +250,6 @@ async function getReviewerOptions(
 }
 
 // ── Admin: create / assign / re-audit ─────────────────────────────────
-
-async function createAudits(
-	values: CreateDealerAuditFormValues,
-): Promise<DealerAudit[]> {
-	const payload = mapFormToCreateAuditPayload(values);
-	const body = await tracked(
-		{
-			operation: "createAudits",
-			method: "POST",
-			url: auditPaths.list,
-			payload,
-		},
-		() =>
-			ServerAxios.post<ApiEnvelope<DealerAuditResponse[]>>(
-				auditPaths.list,
-				payload,
-			).then((r) => r.data),
-	);
-	return (body.data ?? []).map(mapDealerAuditResponse);
-}
 
 async function reAudit(variables: ReAuditVariables): Promise<DealerAudit> {
 	const url = auditPaths.reAudit(variables.auditId);
@@ -541,7 +519,6 @@ export const dealerAuditApi = {
 	getAuditReport,
 	getDealerOptions,
 	getReviewerOptions,
-	createAudits,
 	reAudit,
 	reassignReviewer,
 	saveAuditItem,

@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { Alert } from "../../../../components/common/Alert";
 import Card from "../../../../components/common/Card";
+import { AuditLogSection } from "../../../../components/ui/audit";
 import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import { dealerAuditContent as content } from "../dealer-audit.content";
@@ -19,7 +20,7 @@ import {
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { formatPeriodLabel } from "../dealer-audit.sla";
 import {
-	getAuditStatusLabelByCode,
+	DEALER_AUDIT_ACTION_MESSAGES,
 	isReportAvailableStatus,
 } from "../dealer-audit.status";
 import {
@@ -29,13 +30,17 @@ import {
 	getChecklistProgress,
 	getReviewProgress,
 } from "../../shared/execution/audit-execution.utils";
-import AuditDueLabel from "../components/AuditDueLabel";
-import AuditHistoryPanel from "../../shared/execution/components/AuditHistoryPanel";
+import {
+	PageError,
+	PageLoading,
+	PageNoAccess,
+} from "../cycle/components/AuditPageStates";
+import { AuditDueLabel } from "../components/AuditStatusBadge";
 import AuditProgressSummary from "../../shared/execution/components/AuditProgressSummary";
 import AuditReminderBanner from "../../shared/execution/components/AuditReminderBanner";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import AuditWorkflowActions from "../components/AuditWorkflowActions";
-import { useAuditReminders } from "../hooks/useAuditReminders";
+import { useAuditReminders } from "../hooks/useDealerAudits";
 import {
 	useAuditPermissions,
 	useDealerAuditSession,
@@ -43,7 +48,6 @@ import {
 import {
 	useDealerAudit,
 	useDealerAuditChecklist,
-	useDealerAuditHistory,
 } from "../hooks/useDealerAudits";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
 import Button from "../../../../components/common/Button";
@@ -74,10 +78,6 @@ export default function DealerAuditDetailPage() {
 	const checklistQuery = useDealerAuditChecklist(auditId);
 	const audit = auditQuery.data;
 	const permissions = useAuditPermissions(audit);
-	const historyQuery = useDealerAuditHistory(
-		auditId,
-		permissions.canViewHistory,
-	);
 	const reminders = useAuditReminders(
 		audit,
 		role === "DEALER" ? "DEALER" : "INTERNAL",
@@ -120,9 +120,8 @@ export default function DealerAuditDetailPage() {
 	if (auditQuery.isLoading) {
 		return (
 			<PageSectionLayout className="audit-page">
-				<p className="text-sm text-fg-secondary" role="status">
-					{text.loading}
-				</p>
+				{backNavigation}
+				<PageLoading label={text.loading} />
 			</PageSectionLayout>
 		);
 	}
@@ -131,15 +130,11 @@ export default function DealerAuditDetailPage() {
 		return (
 			<PageSectionLayout className="audit-page">
 				{backNavigation}
-				<Alert
-					variant="error"
-					type="banner"
+				<PageError
 					title={text.errorTitle}
-					description={getAuditActionErrorMessage(auditQuery.error, "audit")}
-					primaryAction={{
-						label: text.retry,
-						onClick: () => void auditQuery.refetch(),
-					}}
+					retryLabel={text.retry}
+					message={getAuditActionErrorMessage(auditQuery.error, "audit")}
+					onRetry={() => void auditQuery.refetch()}
 				/>
 			</PageSectionLayout>
 		);
@@ -149,7 +144,7 @@ export default function DealerAuditDetailPage() {
 		return (
 			<PageSectionLayout className="audit-page">
 				{backNavigation}
-				<Alert
+				<PageNoAccess
 					variant="warning"
 					title={text.deniedTitle}
 					description={text.deniedDescription}
@@ -283,12 +278,12 @@ export default function DealerAuditDetailPage() {
 
 				{permissions.canViewHistory ? (
 					<Card variant="outlined" title={text.historyTitle} padding="compact">
-						<AuditHistoryPanel
-							entries={historyQuery.data ?? []}
-							getStatusLabel={getAuditStatusLabelByCode}
-							isLoading={historyQuery.isLoading}
-							isError={historyQuery.isError}
-							onRetry={() => void historyQuery.refetch()}
+						<AuditLogSection
+							subjectType="DEALER_AUDIT_INSTANCE"
+							subjectId={audit.id}
+							entityName="dealer audit"
+							actionMessages={DEALER_AUDIT_ACTION_MESSAGES}
+							refreshKey={audit.status}
 						/>
 					</Card>
 				) : null}

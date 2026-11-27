@@ -34,11 +34,6 @@ import AuditTemplateBuildStep from "./AuditTemplateBuildStep";
 import AuditTemplateDetailsStep from "./AuditTemplateDetailsStep";
 import AuditTemplatePreview from "./AuditTemplatePreview";
 import {
-	AUDIT_TEMPLATE_PROGRESS_STEPS,
-	AUDIT_TEMPLATE_STEP_ORDER,
-	type AuditTemplateBuilderStep,
-} from "./audit-template.steps";
-import {
 	createAuditTemplateBuildSchema,
 	createAuditTemplateDetailsSchema,
 	type AuditTemplateLayout,
@@ -51,6 +46,27 @@ import type {
 	AuditTemplateFieldConfig,
 } from "./audit.template.types";
 import { createEmptyBuilderValues } from "./audit-template.utils";
+
+// ── Steps ─────────────────────────────────────────────────────────────
+
+type AuditTemplateBuilderStep = "details" | "build" | "review";
+
+const AUDIT_TEMPLATE_STEP_ORDER: readonly AuditTemplateBuilderStep[] = [
+	"details",
+	"build",
+	"review",
+];
+
+const STEP_LABEL: Record<AuditTemplateBuilderStep, string> = {
+	details: "Details",
+	build: "Build checklist",
+	review: "Review & publish",
+};
+
+/** Shape expected by StepProgress (ids are 1-based). */
+const AUDIT_TEMPLATE_PROGRESS_STEPS = AUDIT_TEMPLATE_STEP_ORDER.map(
+	(step, index) => ({ id: index + 1, label: STEP_LABEL[step] }),
+);
 
 /** Where each server validation message belongs in the two builder forms. */
 export interface MappedServerFieldErrors {

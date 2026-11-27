@@ -12,14 +12,10 @@ import {
 
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { dealerAuditApi } from "../dealer-audit.api";
-import {
-	dealerAuditContent as content,
-	formatDealerAuditMessage as format,
-} from "../dealer-audit.content";
+import { dealerAuditContent as content } from "../dealer-audit.content";
 import { dealerAuditKeys } from "../dealer-audit.queries";
 import type {
 	AuditVersionVariables,
-	CreateDealerAuditFormValues,
 	DealerAudit,
 	DealerAuditChecklist,
 	DealerAuditChecklistItem,
@@ -364,26 +360,6 @@ export function useReAudit() {
 			});
 			void queryClient.invalidateQueries({ queryKey: dealerAuditKeys.lists() });
 			toastSuccess(content.toasts.reAuditCreated);
-		},
-	});
-}
-
-export function useCreateDealerAudits() {
-	const queryClient = useQueryClient();
-	const { showToast } = useToast();
-
-	return useMutation({
-		mutationFn: (values: CreateDealerAuditFormValues) =>
-			dealerAuditApi.createAudits(values),
-		onSuccess: (audits) => {
-			void queryClient.invalidateQueries({ queryKey: dealerAuditKeys.lists() });
-			showToast({
-				type: "success",
-				title: content.toasts.auditsCreated.title,
-				description: format(content.toasts.auditsCreated.description, {
-					count: audits.length,
-				}),
-			});
 		},
 	});
 }

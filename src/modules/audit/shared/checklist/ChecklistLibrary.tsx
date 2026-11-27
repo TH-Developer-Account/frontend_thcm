@@ -23,7 +23,7 @@ import { SearchInput } from "../../../../components/forms/SearchInput";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import TableListing from "../../../../components/ui/tables/DataTable/TableListing";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
-import { TEMPLATE_STATUS_FILTER_TABS } from "../templates/audit-template.status";
+import { TEMPLATE_STATUS_FILTER_TABS } from "../templates/audit-template.constants";
 import type {
 	AuditTemplateListRow,
 	TemplateLifecycleStatus,

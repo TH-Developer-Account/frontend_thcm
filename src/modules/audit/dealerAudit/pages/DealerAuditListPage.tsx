@@ -28,7 +28,7 @@ import type {
 	DealerAuditListItem,
 	DealerAuditQuarter,
 } from "../dealer-audit.types";
-import AuditDueLabel from "../components/AuditDueLabel";
+import { AuditDueLabel } from "../components/AuditStatusBadge";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import { useDealerAuditList } from "../hooks/useDealerAudits";
 import { useDealerAuditSession } from "../hooks/useDealerAuditAccess";

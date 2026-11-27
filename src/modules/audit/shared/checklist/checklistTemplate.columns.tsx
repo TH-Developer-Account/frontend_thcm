@@ -26,7 +26,7 @@ import { formatDateTime } from "../../../../utils/format";
 import {
 	getTemplateStatusBadgeVariant,
 	getTemplateStatusLabel,
-} from "../templates/audit-template.status";
+} from "../templates/audit-template.constants";
 import type {
 	AuditTemplateListRow,
 	AuditTemplateSortField,
